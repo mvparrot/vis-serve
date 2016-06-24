@@ -1,1 +1,6 @@
-atp_serves.RData
+*.RData
+*/*.RData
+*.pdf
+.Rproj.user/
+*/.Rhistory
+Vis-Serve-Trial-1/dictionary.docx
