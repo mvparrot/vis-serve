@@ -24,12 +24,17 @@ generate <- function(coef, t) {
     return(var)
 }
 
-t <- timevec(0.4,20)
+tv <- timevec(0.4,20)
 
+test_data <- atp_serves[2,]
 cx <- coefvec(test_data,"x",1)
 cy <- coefvec(test_data,"y",1)
 cz <- coefvec(test_data,"z",1)
 
-x <- generate(cx,t)
-y <- generate(cy,t)
-z <- generate(cz,t)
+x <- generate(cx,tv)
+y <- generate(cy,tv)
+z <- generate(cz,tv)
+
+df <- data.frame(x=t(x), y=t(y), z=t(z))
+library(GGally)
+ggscatmat(df)
