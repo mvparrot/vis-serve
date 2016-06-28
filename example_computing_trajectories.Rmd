@@ -1,0 +1,34 @@
+---
+title: "Computing Ball Locations"
+author: "Stephanie Kovalchik"
+date: "28 June 2016"
+output: html_document
+---
+
+```{r setup, eval = FALSE}
+#library(devtools)
+#install_github("hadley/purrr")
+```
+
+Belos is an example of how to use `purrr`, `dplyr` and the `by_row` function to compute a set of locations in one direction of a serve arc for every fixed number of seconds from the start to the end of the recording time. In the example below, we compute the x locations for every 0.05 seconds of the first arc of the serve. These are stored as a data frame of locations and times under the column `xlocation`.
+
+```{r locations, message=FALSE}
+library(dplyr)
+library(purrr)
+
+load("~/Courses/mvparrot/data/atp_serves.RData")
+
+get_location <- function(a, b, c, d, time) c(a, b, c, d) %*% time ^ (0:3)
+get_location <- Vectorize(get_location)
+
+locations <- function(a, b, c, d, start, end, interval = 0.05) {
+  times <- seq(start, end, by = interval)
+data.frame(time = times, location = get_location(a, b, c, d, times))
+}
+
+temp <- atp_serves[1:3,] %>%
+  by_row(~locations(.$raw.x0.1, .$raw.x1.1, .$raw.x2.1, .$raw.x3.1, .$start.1, .$start.1 + .$duration.arc1), .to = "xlocation")
+
+
+temp$xlocation
+```
