@@ -73,3 +73,6 @@ df_long <- df_long %>%
     mutate(pos=traj_coords(start.1, dir, flip, c0, c1, c2, c3, tm=0))
 
 # Next use purrr, to run multiple times
+
+dft <- seq(0,1, by=0.1) %>%
+  map_df(function(x) mutate(rowwise(df_long), time=(start.3-start.1)*x, pos=traj_coords(start.1, dir, flip, c0, c1, c2, c3, tm=(start.3-start.1)*x)))
