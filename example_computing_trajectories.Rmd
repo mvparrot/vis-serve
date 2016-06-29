@@ -23,7 +23,7 @@ get_location <- Vectorize(get_location)
 
 locations <- function(a, b, c, d, start, end, interval = 0.05) {
   times <- seq(start, end, by = interval)
-data.frame(time = times, location = get_location(a, b, c, d, times))
+  data.frame(time = times, location = get_location(a, b, c, d, times))
 }
 
 temp <- atp_serves[1:3,] %>%
