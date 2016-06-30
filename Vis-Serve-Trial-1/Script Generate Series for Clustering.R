@@ -1,3 +1,8 @@
+#================================================
+#--- Rough script to create x, y, z coordinates
+#--- Alwin Wang
+#================================================
+
 test_data <- atp_serves[1:10,]
 t_end <- 0.4
 t_step <- 0.05
