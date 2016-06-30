@@ -46,3 +46,38 @@ summary_data$pos.y <- pos.y
 summary_data$pos.z <- pos.z
 
 pairs(summary_data[,c("pos.x","pos.y","pos.z")])
+
+# Di's attempt to functionise
+
+# Rearrange data
+library(tidyr)
+library(dplyr)
+df_long <- test_data %>% select(serveid, start.1, raw.x0.1:raw.z3.1) %>%
+    mutate(flip = sign(raw.x0.1)) %>%
+    gather(coef, value, -serveid, -start.1, -flip) %>%
+    separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+    select(-junk1, -junk2) %>%
+    mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+    spread(coef, value) %>%
+    rename("c0"=`0`, "c1"=`1`, "c2"=`2`, "c3"=`3`)
+    
+traj_coords <- function(start.1, dir, flip, c0, c1, c2, c3, tm=0) {
+    tm <- tm + start.1
+    if (dir != "z") {
+        c0 <- flip * c0
+        c1 <- flip * c1
+        c2 <- flip * c2
+        c3 <- flip * c3
+    }
+    pos <- c0 + c1*tm + c2*tm^2 + c3*tm^3
+    return(pos)
+}
+
+df_long <- df_long %>% 
+    rowwise() %>%
+    mutate(pos=traj_coords(start.1, dir, flip, c0, c1, c2, c3, tm=0))
+
+# Next use purrr, to run multiple times
+
+dft <- seq(0,1, by=0.1) %>%
+  map_df(function(x) mutate(rowwise(df_long), time=(start.3-start.1)*x, pos=traj_coords(start.1, dir, flip, c0, c1, c2, c3, tm=(start.3-start.1)*x)))
