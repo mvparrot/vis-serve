@@ -64,7 +64,7 @@ GeneratePoints <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
         arc1points <- seq(0,1,length.out=arc1) %>%
             map_df(function(x) mutate(rowwise(arc1p), time=start+duration*x, 
                                       pos=traj_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
-                                      vec=velo_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
+                                      vel=velo_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
                                       acc=acce_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x)))
         out <- rbind(out, cbind(arc=1, arc1points))
     }
@@ -80,13 +80,13 @@ GeneratePoints <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
         arc3points <- seq(0,1, length.out=arc3) %>%
             map_df(function(x) mutate(rowwise(arc3p), time=start+duration*x,  
                                       pos=traj_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
-                                      vec=velo_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
+                                      vel=velo_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x),
                                       acc=acce_coords(start, dir, flip, c0, c1, c2, c3, tm=duration*x)))
         out <- rbind(out, cbind(arc=3, arc3points))
     }
     
     
-#    tidy <- out %>% select(extravars,pos,vec,acc) %>%
+#    tidy <- out %>% select(extravars,pos,vel,acc) %>%
 #        gather(out, type, value, -(1:length(extravars)))
     
     out <- gather(out,type,value,-(1:11))
