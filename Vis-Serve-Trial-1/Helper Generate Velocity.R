@@ -14,6 +14,10 @@ velo_coords <- function(start, dir, flip, c0, c1, c2, c3, tm=0) {
     return(vel)
 }
 
+velo_total <- function(vx,vy,vz) {
+    vel <- sqrt(vx^2 + vy^2 + vz^2)
+}
+
 
 GenerateVel <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
     require(tidyr)
@@ -57,11 +61,13 @@ GenerateVel <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
         extravars <- match(dots[dots%in%colnames(out)], colnames(out))
         out <- out %>% select(arc, extravars, flip, dir, time, vel) %>%
             spread(dir, vel)
+        
+        
     }
     
+    out$v <- sqrt(out$x^2 + out$y^2 + out$z^2)
+    
     return(out)
-    
-    
 }
 
 
@@ -85,3 +91,4 @@ plot_ly(sample, x=x, y=y, z=z, group=serveid, type="scatter3d", mode="lines") %>
     add_trace(x=x, y=y, z=z, data=courtTrace, type="scatter3d", mode="lines") %>%
     layout(scene=list(aspectmode="data"))
 
+ggplot(sample,aes(x=x,y=v*3.6))
