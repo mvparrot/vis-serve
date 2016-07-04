@@ -16,7 +16,7 @@ Belos is an example of how to use `purrr`, `dplyr` and the `by_row` function to 
 library(dplyr)
 library(purrr)
 
-load("~/Courses/mvparrot/data/atp_serves.RData")
+load("atp_serves.RData")
 
 get_location <- function(a, b, c, d, time) c(a, b, c, d) %*% time ^ (0:3)
 get_location <- Vectorize(get_location)
