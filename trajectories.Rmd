@@ -1,0 +1,337 @@
+---
+title: "Studying the trajectories"
+author: "Di Cook"
+date: "July 5, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+```
+
+## Function to compute trajectory
+
+This function computes the position given the coordinates and a time point.
+
+```{r}
+traj_coords <- function(start, dir, flip, c0, c1, c2, c3, tm=0) {
+  tm <- tm + start
+  if (dir != "z") {
+    c0 <- flip * c0
+    c1 <- flip * c1
+    c2 <- flip * c2
+    c3 <- flip * c3
+  }
+  pos <- c0 + c1*tm + c2*tm^2 + c3*tm^3
+  return(pos)
+}
+```
+
+# Load and process data
+
+Read in the data (needs to be in the same directory), and create additional variables of interest. 
+
+```{r}
+load("atp_serves.Rdata")
+arc1 <- 10
+arc3 <- 0
+atp_serves <- atp_serves %>% mutate(duration = arc1 * duration.arc1 + arc3 * duration.arc3,
+                          flip = sign(raw.x0.1), 
+                          tserve = ifelse(abs(center.y)>2, "no", "yes"))
+```
+
+The data should be in long form, so that the trajectory function can be applied independently to each x, y, z direction.
+
+```{r}
+atp_serves_long <- atp_serves %>%
+  select(serveid, start.1, duration.arc1, flip, raw.x0.1:raw.z3.1) %>%
+  gather(coef, value, -serveid, -start.1, -duration.arc1, -flip) %>%
+  #gather(coef, value, raw.x0.1:raw.z3.1) %>%
+  separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+  select(-junk1, -junk2) %>%
+  mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+  spread(coef, value) %>%
+  rename("start" = `start.1`, "duration"=`duration.arc1`, "c0"=`0`,
+             "c1"=`1`, "c2"=`2`, "c3"=`3`)
+
+```
+
+Use purrr to apply the `traj_coords` function to each direction of each serve, for a sequence of time points.
+
+```{r}
+arc1points <- seq(0, 1, length.out = arc1) %>%
+  map_df(function(x) mutate(rowwise(atp_serves_long), time=start + duration * x,
+     pos=traj_coords(start, dir, flip, c0, c1, c2, c3,
+     tm = duration * x))) %>%
+  select(serveid, pos, time, flip, dir) %>%
+  arrange(serveid, pos, time) %>% 
+  spread(dir, pos)
+```
+
+Merge with original data - could have kept it all together, but it feels better to just operate on the coefficients subset.
+
+```{r}
+all <- merge(arc1points, atp_serves, by="serveid")
+```
+
+# Plotting the data
+
+Set up a theme for displaying the court, and the court marks.
+
+```{r}
+# Court background theme
+theme_court <- theme_bw()
+theme_court$line <- element_blank()
+theme_court$axis.text <- element_blank()
+theme_court$axis.title <- element_blank()
+
+# Court dimensions data
+court_trace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 0, 0, 0, 
+                               11.89, 11.89, -11.89, -11.89, 11.89, 
+                               11.89, -11.89, -6.4, -6.4, 6.4, 6.4, 
+                               6.4, -6.4),
+                         y = c(5.49, -5.49, -5.49, -6.5, -6.5, 6.5, 
+                               6.5, -5.49, -5.49, 5.49, 5.49, 4.115, 
+                               4.115, -4.115, -4.115, -4.115, 4.115, 
+                               4.115, -4.115, 0, 0),
+                         z = c(0, 0, 0, 0, 1.09, 1.09, 0, 0, 0, 0, 0, 
+                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+```
+
+Put it together
+
+```{r}
+# Plot x-y
+ggplot() +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(all, scorer!=0), aes(x=x, y=y, group=serveid,
+        colour=factor(scorer)), alpha=0.1) +
+  facet_grid(serve_classification~side) +
+  coord_equal() +
+  theme_court +
+  theme(legend.position="bottom")
+ggplot(data=filter(all, scorer!=0)) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(all, scorer!=0), aes(x=x, y=z, group=serveid,
+                          colour=factor(scorer)), alpha=0.1) +
+  facet_grid(serve_classification~side) +
+  theme_court +
+  theme(legend.position="bottom")
+```
+
+# Summarise traces
+
+```{r}
+sub <- all %>% select(serveid, time, x, y, z, server,
+                      receiver, scorer, side, tserve, serve_classification) %>%
+  arrange(serveid, time)
+sub$timeindx <- rep(1:arc1, 2000)
+sub_summary <- sub %>% group_by(side, tserve, serve_classification,
+                                scorer, timeindx) %>%
+  summarise(xm=mean(x, trim=0.1, na.rm=T),
+            ym=mean(y, trim=0.1, na.rm=T),
+            zm=mean(z, trim=0.1, na.rm=T),
+            xs=sd(x, na.rm=T), ys=sd(y, na.rm=T), zs=sd(z, na.rm=T))
+```
+
+and plot the average
+
+```{r}
+ggplot(data=filter(sub_summary, scorer != 0)) +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(sub_summary, scorer != 0), aes(x=xm, y=ym,
+                                                       group=interaction(tserve, scorer),
+                                             colour=factor(scorer))) +
+  facet_grid(serve_classification~side) +
+  coord_equal() +
+  theme_court +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary, scorer != 0)) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(sub_summary, scorer != 0),
+            aes(x=xm, y=zm, group=interaction(tserve, scorer),
+                colour=factor(scorer))) +
+  facet_grid(serve_classification~side) +
+  theme_court +
+  theme(legend.position="bottom")
+```
+
+# Functionise the code better
+
+```{r}
+generate_traj_points <- function(data, npts = 10, both_arcs = TRUE, ...) {
+  
+  # Handle arguments for extra variables
+  dots <- c("serveid", sapply(substitute(list(...))[-1], deparse))
+  extravars <- match(dots[dots%in%colnames(data)], colnames(data))
+
+  # Longify data
+  data_long <- data %>%
+  select(serveid, start.1, duration.arc1, flip, raw.x0.1:raw.z3.1) %>%
+  gather(coef, value, -serveid, -start.1, -duration.arc1, -flip) %>%
+  #gather(coef, value, raw.x0.1:raw.z3.1) %>%
+  separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+  select(-junk1, -junk2) %>%
+  mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+  spread(coef, value) %>%
+  rename("start" = `start.1`, "duration"=`duration.arc1`, "c0"=`0`,
+             "c1"=`1`, "c2"=`2`, "c3"=`3`) 
+  
+  # Compute points for arc 1
+  arcpoints <- seq(0, 1, length.out = npts) %>%
+    map_df(function(x) mutate(rowwise(data_long), time=start + duration * x,
+      pos=traj_coords(start, dir, flip, c0, c1, c2, c3,
+      tm = duration * x))) %>%
+    select(serveid, pos, time, flip, dir) %>%
+    arrange(serveid, pos, time) %>% 
+    spread(dir, pos)
+  
+  # Now second arc
+  if (both_arcs) {
+    data_long <- data %>% select(extravars, start.3, duration.arc3, flip,
+                                       raw.x0.3:raw.z3.3) %>%
+      gather(coef, value, -(1:length(extravars)), -start.3, -duration.arc3, -flip) %>%
+      separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+      select(-junk1, -junk2) %>%
+      mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+      spread(coef, value) %>%
+      rename("start" = `start.3`, "duration"=`duration.arc3`, "c0"=`0`, "c1"=`1`,
+             "c2"=`2`, "c3"=`3`)
+    
+    arc3points <- seq(0, 1, length.out=npts) %>%
+      map_df(function(x) mutate(rowwise(data_long), time = start + duration * x,
+                                pos = traj_coords(start, dir, flip, c0, c1, c2, c3,
+                                                tm=duration * x))) %>%
+      select(serveid, pos, time, flip, dir) %>%
+      arrange(serveid, pos, time) %>% 
+    spread(dir, pos)
+    arcpoints <- rbind(arcpoints, arc3points)
+  }
+  return(arcpoints)
+}
+```
+
+Test it
+
+```{r}
+arc_points <- generate_traj_points(atp_serves)
+all <- merge(arc_points, atp_serves, by="serveid")
+```
+
+Now plot it
+
+```{r}
+# Plot x-y
+ggplot() +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(all, scorer!=0), aes(x=x, y=y, group=serveid,
+        colour=factor(scorer)), alpha=0.1) +
+  facet_grid(serve_classification~side) +
+  coord_equal() +
+  theme_court +
+  theme(legend.position="bottom")
+ggplot(data=filter(all, scorer!=0)) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(all, scorer!=0), aes(x=x, y=z, group=serveid,
+                          colour=factor(scorer)), alpha=0.1) +
+  facet_grid(serve_classification~side) +
+  theme_court +
+  theme(legend.position="bottom")
+```
+
+Plot summaries by player
+
+```{r}
+# by player, too
+sub <- all %>% select(serveid, time, x, y, z, server,
+                      receiver, scorer, side, tserve, serve_classification) %>%
+  arrange(serveid, time)
+sub$timeindx <- rep(1:arc1, 2000)
+sub_summary_plyr <- sub %>% group_by(side, tserve, serve_classification,
+                                     scorer, timeindx, server) %>%
+  summarise(xm=mean(x, trim=0.1, na.rm=T),
+            ym=mean(y, trim=0.1, na.rm=T),
+            zm=mean(z, trim=0.1, na.rm=T),
+            xs=sd(x, na.rm=T), ys=sd(y, na.rm=T), zs=sd(z, na.rm=T))
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=ym,
+                                                       group=interaction(tserve, scorer),
+                                                       colour=factor(scorer))) +
+  facet_grid(server~side + serve_classification) +
+  coord_equal() +
+  theme_court +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=zm, group=interaction(tserve, scorer),
+                colour=factor(scorer))) +
+  facet_grid(server~side + serve_classification) +
+  theme_court +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=ym,
+                                                       group=interaction(server, tserve),
+                                                       colour=server)) +
+  facet_grid(side + scorer ~ serve_classification) +
+  coord_equal() +
+  theme_court +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=zm, group=interaction(tserve, server),
+                colour=server)) +
+  facet_grid(side + scorer ~ serve_classification) +
+  theme_court +
+  theme(legend.position="bottom")
+```

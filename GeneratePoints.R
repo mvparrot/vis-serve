@@ -76,7 +76,6 @@ courtTrace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 0, 0, 0, 11.89, 11.89, -
                          z = c(0, 0, 0, 0, 1.09, 1.09, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 load("atp_serves.RData")
-atp_serves <- atp_serves %>% mutate(tserve = ifelse(abs(center.y)>2, "no", "yes"))
 sample <- GeneratePoints(atp_serves[1:10,], arc3=10, wide=TRUE)
 sample <- GeneratePoints(atp_serves, arc3=10, wide=TRUE)
 # Drop out players with too few games, only for looking at players
@@ -99,16 +98,13 @@ plot_ly(sample, x=x, y=y, z=z, group=serveid, type="scatter3d", mode="lines") %>
   add_trace(x=x, y=y, z=z, data=courtTrace, type="scatter3d", mode="lines") %>%
   layout(scene=list(aspectmode="data"))
 
-# Add the serve characteristics
+# Court background theme
 theme_blank <- theme_bw()
 theme_blank$line <- element_blank()
-#theme_blank$strip.text <- element_blank()
 theme_blank$axis.text <- element_blank()
-#theme_blank$plot.title <- element_blank()
 theme_blank$axis.title <- element_blank()
-#theme_blank$panel.border <- element_rect(
-#  colour = "grey90", size=1, fill=NA)
 
+# Add the serve characteristics
 all <- merge(sample, atp_serves_sub, by="serveid")
 all <- merge(sample, atp_serves, by="serveid")
 # Plot x-y
@@ -202,5 +198,71 @@ ggplot(data=filter(sub_summary, scorer != 0)) +
             aes(x=xm, y=zm, group=interaction(tserve, scorer),
                 colour=factor(scorer))) +
   facet_grid(serve_classification~side) +
+  theme_blank +
+  theme(legend.position="bottom")
+
+# by player, too
+sub_summary_plyr <- sub %>% group_by(side, tserve, serve_classification,
+                                     scorer, timeindx, server) %>%
+  summarise(xm=mean(x, trim=0.1, na.rm=T),
+            ym=mean(y, trim=0.1, na.rm=T),
+            zm=mean(z, trim=0.1, na.rm=T),
+            xs=sd(x, na.rm=T), ys=sd(y, na.rm=T), zs=sd(z, na.rm=T))
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_path(data = courtTrace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = courtTrace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(sub_summary, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=ym,
+                                                       group=interaction(tserve, scorer),
+                                                       colour=factor(scorer))) +
+  facet_grid(server~side + serve_classification) +
+  coord_equal() +
+  theme_blank +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=zm, group=interaction(tserve, scorer),
+                colour=factor(scorer))) +
+  facet_grid(server~side + serve_classification) +
+  theme_blank +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_path(data = courtTrace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = courtTrace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=ym,
+                                                       group=interaction(server, tserve),
+                                                       colour=server)) +
+  facet_grid(side + scorer ~ serve_classification) +
+  coord_equal() +
+  theme_blank +
+  theme(legend.position="bottom")
+
+ggplot(data=filter(sub_summary_plyr, scorer != 0 &
+                     server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI"))) +
+  geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0),
+               color='grey90', size=0.5) +
+  geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
+  geom_line(data=filter(sub_summary_plyr, scorer != 0 &
+                          server %in% c("DJOKOVIC", "FEDERER", "RAONIC", "NISHIKORI")),
+            aes(x=xm, y=zm, group=interaction(tserve, server),
+                colour=server)) +
+  facet_grid(side + scorer ~ serve_classification) +
   theme_blank +
   theme(legend.position="bottom")
