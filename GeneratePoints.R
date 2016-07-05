@@ -76,6 +76,7 @@ courtTrace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 0, 0, 0, 11.89, 11.89, -
                          z = c(0, 0, 0, 0, 1.09, 1.09, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 load("atp_serves.RData")
+atp_serves <- atp_serves %>% mutate(tserve = ifelse(abs(center.y)>2, "no", "yes"))
 sample <- GeneratePoints(atp_serves[1:10,], arc3=10, wide=TRUE)
 sample <- GeneratePoints(atp_serves, arc3=10, wide=TRUE)
 # Drop out players with too few games, only for looking at players
@@ -170,10 +171,10 @@ ggplot(data=filter(all, server %in% keep)) +
 
 # Summarise trajectories by other variables
 sub <- all %>% select(serveid, arc, flip, time, x, y, z, server,
-                      receiver, scorer, side, serve_classification) %>%
+                      receiver, scorer, side, tserve, serve_classification) %>%
   arrange(serveid, arc, time)
 sub$timeindx <- rep(1:20, 2000)
-sub_summary <- sub %>% group_by(side, serve_classification,
+sub_summary <- sub %>% group_by(side, tserve, serve_classification,
                                 scorer, timeindx) %>%
   summarise(xm=mean(x, trim=0.1, na.rm=T),
             ym=mean(y, trim=0.1, na.rm=T),
@@ -185,7 +186,8 @@ ggplot(data=filter(sub_summary, scorer != 0)) +
             color = 'grey90', size = 0.5) +
   geom_segment(data = courtTrace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
                size = 0.5, color = 'darkgrey', lineend = 'round') +
-  geom_line(data=filter(sub_summary, scorer != 0), aes(x=xm, y=ym, group=scorer,
+  geom_line(data=filter(sub_summary, scorer != 0), aes(x=xm, y=ym,
+                                                       group=interaction(tserve, scorer),
                                              colour=factor(scorer))) +
   facet_grid(serve_classification~side) +
   coord_equal() +
@@ -197,7 +199,7 @@ ggplot(data=filter(sub_summary, scorer != 0)) +
                color='grey90', size=0.5) +
   geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='grey90') +
   geom_line(data=filter(sub_summary, scorer != 0),
-            aes(x=xm, y=zm, group=scorer,
+            aes(x=xm, y=zm, group=interaction(tserve, scorer),
                 colour=factor(scorer))) +
   facet_grid(serve_classification~side) +
   theme_blank +
