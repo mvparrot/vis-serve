@@ -1,0 +1,168 @@
+---
+title: "Trajectory Density Plots"
+author: "Di Cook"
+date: "July 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+```
+
+```{r echo=FALSE}
+traj_coords <- function(start, dir, flip, c0, c1, c2, c3, tm=0) {
+  tm <- tm + start
+  if (dir != "z") {
+    c0 <- flip * c0
+    c1 <- flip * c1
+    c2 <- flip * c2
+    c3 <- flip * c3
+  }
+  pos <- c0 + c1*tm + c2*tm^2 + c3*tm^3
+  return(pos)
+}
+```
+
+```{r echo=FALSE}
+generate_traj_points <- function(data, npts = 10, both_arcs = TRUE, ...) {
+  
+  # Handle arguments for extra variables
+  dots <- c("serveid", sapply(substitute(list(...))[-1], deparse))
+  extravars <- match(dots[dots%in%colnames(data)], colnames(data))
+
+  # Longify data
+  data_long <- data %>%
+  select(serveid, start.1, duration.arc1, flip, raw.x0.1:raw.z3.1) %>%
+  gather(coef, value, -serveid, -start.1, -duration.arc1, -flip) %>%
+  #gather(coef, value, raw.x0.1:raw.z3.1) %>%
+  separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+  select(-junk1, -junk2) %>%
+  mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+  spread(coef, value) %>%
+  rename("start" = `start.1`, "duration"=`duration.arc1`, "c0"=`0`,
+             "c1"=`1`, "c2"=`2`, "c3"=`3`) 
+  
+  # Compute points for arc 1
+  arcpoints <- seq(0, 1, length.out = npts) %>%
+    map_df(function(x) mutate(rowwise(data_long), time=start + duration * x,
+      pos=traj_coords(start, dir, flip, c0, c1, c2, c3,
+      tm = duration * x))) %>%
+    select(serveid, pos, time, flip, dir) %>%
+    arrange(serveid, pos, time) %>% 
+    spread(dir, pos)
+  
+  # Now second arc
+  if (both_arcs) {
+    data_long <- data %>% select(extravars, start.3, duration.arc3, flip,
+                                       raw.x0.3:raw.z3.3) %>%
+      gather(coef, value, -(1:length(extravars)), -start.3, -duration.arc3, -flip) %>%
+      separate(coef, c("junk1", "coef", "junk2"), sep="\\.") %>%
+      select(-junk1, -junk2) %>%
+      mutate(dir=substr(coef, 1, 1), coef=substr(coef, 2, 2)) %>%
+      spread(coef, value) %>%
+      rename("start" = `start.3`, "duration"=`duration.arc3`, "c0"=`0`, "c1"=`1`,
+             "c2"=`2`, "c3"=`3`)
+    
+    arc3points <- seq(0, 1, length.out=npts) %>%
+      map_df(function(x) mutate(rowwise(data_long), time = start + duration * x,
+                                pos = traj_coords(start, dir, flip, c0, c1, c2, c3,
+                                                tm=duration * x))) %>%
+      select(serveid, pos, time, flip, dir) %>%
+      arrange(serveid, pos, time) %>% 
+    spread(dir, pos)
+    arcpoints <- rbind(arcpoints, arc3points)
+  }
+  return(arcpoints)
+}
+```
+
+```{r echo=FALSE}
+load("atp_serves.Rdata")
+arc1 <- 10
+arc3 <- 0
+atp_serves <- atp_serves %>% mutate(duration = arc1 * duration.arc1 + arc3 * duration.arc3,
+                          flip = sign(raw.x0.1), 
+                          tserve = ifelse(abs(center.y)>2, "no", "yes"))
+arc_points <- generate_traj_points(atp_serves)
+all <- merge(arc_points, atp_serves, by="serveid")
+```
+
+```{r echo=FALSE}
+# Court background theme
+theme_court <- theme_bw()
+theme_court$line <- element_blank()
+theme_court$axis.text <- element_blank()
+theme_court$axis.title <- element_blank()
+
+# Court dimensions data
+court_trace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 0, 0, 0, 
+                               11.89, 11.89, -11.89, -11.89, 11.89, 
+                               11.89, -11.89, -6.4, -6.4, 6.4, 6.4, 
+                               6.4, -6.4),
+                         y = c(5.49, -5.49, -5.49, -6.5, -6.5, 6.5, 
+                               6.5, -5.49, -5.49, 5.49, 5.49, 4.115, 
+                               4.115, -4.115, -4.115, -4.115, 4.115, 
+                               4.115, -4.115, 0, 0),
+                         z = c(0, 0, 0, 0, 1.09, 1.09, 0, 0, 0, 0, 0, 
+                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+```
+
+# Density with the hextri package
+
+```{r fig.show='hide'}
+library(hextri)
+all_sub <- all %>% filter(scorer != 0)
+all_hex <- hextri(all_sub$x, all_sub$y, all_sub$scorer,
+                  col=c("#1b9e77","#d95f02"), nbins=30, style="size")
+```
+
+```{r}
+col.group <- unique(all_hex$col)
+all_hex.df <- data.frame(x=all_hex$x[!is.na(all_hex$x)],
+                         y=all_hex$y[!is.na(all_hex$x)], 
+    tri=rep(1:length(all_hex$col), 
+            rep(3, length(all_hex$col))), 
+        col=rep(all_hex$col, 
+            rep(3, length(all_hex$col))))
+ggplot() +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_polygon(data=all_hex.df, aes(x=x, y=y, group=tri, fill=col), alpha=1) +
+  scale_fill_identity() + theme_court + coord_equal()
+```
+
+# Use this to compare two players
+
+```{r fig.show='hide'}
+all_sub <- all %>% filter(scorer == 1 & side == "Ad" & 
+                            (server %in% c("MURRAY", "RAONIC")))
+all_sub$server <- as.character(all_sub$server)
+all_hex <- hextri(all_sub$x, all_sub$y, all_sub$server,
+                  col=c("#1b9e77","#d95f02"), nbins=30)
+```
+
+```{r}
+col.group <- unique(all_hex$col)
+all_hex.df <- data.frame(x=all_hex$x[!is.na(all_hex$x)], y=all_hex$y[!is.na(all_hex$x)], 
+    tri=rep(1:length(all_hex$col), 
+            rep(3, length(all_hex$col))), 
+        col=rep(all_hex$col, 
+            rep(3, length(all_hex$col))))
+ggplot() +
+  geom_path(data = court_trace, aes(x = x, y = y),
+            color = 'grey90', size = 0.5) +
+  geom_segment(data = court_trace, aes(x= 0, xend= 0, y= -6.5, yend= 6.5),
+               size = 0.5, color = 'darkgrey', lineend = 'round') +
+  geom_polygon(data=all_hex.df, aes(x=x, y=y, group=tri, fill=col),
+               alpha=1) + scale_fill_identity() + 
+  theme_court + coord_equal()
+```
