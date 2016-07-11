@@ -1,0 +1,96 @@
+---
+title: "Untitled"
+author: "Di Cook"
+date: "June 23, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+```
+
+## Load data
+
+```{r cars}
+load("atp_serves.RData")
+```
+
+## Including Plots
+
+
+```{r fed-djo, echo=FALSE}
+fed <- atp_serves %>% filter(server == "FEDERER")
+ggplot(fed, aes(x=start.x, y=start.y)) + geom_point()
+
+djok <- atp_serves %>% filter(server == "DJOKOVIC")
+ggplot(djok, aes(x=start.x, y=start.y)) + geom_point()
+```
+
+# Examine the contact point of serves
+
+```{r}
+ggplot(data=atp_serves, aes(x=center.x, y=center.y)) + 
+  geom_point() 
+ggplot(data=atp_serves, aes(x=center.x, y=center.y)) + 
+  geom_point() + facet_wrap(~side)
+```
+
+# Examine winners
+
+```{r}
+ggplot(data=filter(atp_serves, scorer != 0), aes(x=center.x, y=center.y)) + 
+  geom_point() + geom_density2d() + facet_grid(scorer~side)
+ggplot(data=filter(atp_serves, scorer != 0), 
+       aes(x=center.x, y=center.y, colour=factor(scorer))) + 
+  geom_point() + geom_density2d() + facet_wrap(~side)
+```
+
+# By server??
+
+```{r}
+keep <- atp_serves %>% select(server, matchid) %>% 
+  distinct() %>% count(server, sort=TRUE) %>% filter(n>2) 
+atp_serves_sub <- atp_serves %>% filter(server %in% keep$server)
+ggplot(data=filter(atp_serves_sub, scorer != 0), 
+       aes(x=center.x, y=center.y, colour=factor(scorer))) + 
+  geom_point() + geom_density2d(alpha=0.5) + facet_grid(server~side)
+```
+
+# Aces by server
+
+```{r}
+all <- atp_serves_sub %>% filter(serve_classification == 0) %>%
+  select(side, center.x, center.y)
+servers <- atp_serves_sub %>% filter(serve_classification == 0) %>%
+  select(side, center.x, center.y, server)
+ggplot(data=all, aes(x=center.x, y=center.y)) +
+  geom_point(alpha=0.2) +
+  geom_point(data=servers, aes(x=center.x, y=center.y, colour=server), size=2) + 
+  facet_grid(server~side)
+```
+
+# Returned by server, compared to aces
+
+```{r}
+servers <- atp_serves_sub %>% filter(serve_classification < 2) %>%
+  select(side, center.x, center.y, server, serve_classification)
+ggplot(data=servers, aes(x=center.x, y=center.y)) +
+  geom_point(data=servers, 
+             aes(colour=factor(serve_classification)), alpha=0.5, size=2) + 
+  facet_grid(server~side) + theme(legend.position="none")
+```
+
+# Returned by server, and receiver
+
+```{r}
+servers <- atp_serves_sub %>% filter(serve_classification < 2) %>%
+  select(side, center.x, center.y, server, serve_classification)
+ggplot(data=servers, aes(x=center.x, y=center.y)) +
+  geom_point(data=servers, 
+             aes(colour=factor(serve_classification)), alpha=0.5, size=2) + 
+  facet_grid(server~side) + theme(legend.position="none")
+```

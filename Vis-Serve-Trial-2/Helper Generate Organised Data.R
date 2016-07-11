@@ -86,10 +86,10 @@ GeneratePoints <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
     }
     
     
-#    tidy <- out %>% select(extravars,pos,vel,acc) %>%
-#        gather(out, type, value, -(1:length(extravars)))
+#    out <- out %>% select((1:length(extravars)+1),pos,vel,acc) %>%
+#        gather(type, value, -(1:length(extravars)+1))
     
-    out <- gather(out,type,value,-(1:11))
+    out <- gather(out,type,value,-(1:(10+length(extravars))))
     
     
     if(plot){
