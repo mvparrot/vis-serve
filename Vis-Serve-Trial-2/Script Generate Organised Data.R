@@ -19,7 +19,7 @@ sample <- physics(sample)
 # library("ggplot2")
 # ggplot(sample,aes(x=pos.x,y=vel.x*3.6))
 # qplot(pos.x,vel,data=sample)
-# 
+# d
 # library("rgl")
 # plot3d(sample$pos.x,sample$pos.y,sample$vel, type='s', size = 2, #aspect="iso",
 #        xlim=c(-12,12), ylim=c(-6,6))
@@ -31,3 +31,11 @@ test <- sample[sample$serveid=="1_01_03_1_194206.trj" & sample$arc=="1",]
 
 Fx(test$vel.x,test$vel.y,test$vel.z,test$vel.h,test$vel,30,180)/0.057
 
+Fz(test$vel.x,test$vel.y,test$vel.z,test$vel.h,test$vel,10,180)/0.057
+
+test$acc.y
+
+D(test$vel,30) / (A*p*test$vel^2/2)
+L(test$vel,30) / (A*p*test$vel^2/2)
+
+fitx <- lm(formula = acc.x ~ vel.x*vel + vel.z + vel.y, data=test)

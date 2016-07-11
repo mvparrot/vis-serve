@@ -1,11 +1,12 @@
 #================================================
-#--- Functions for modelling spin
+#--- Functions for modelling spin uvw coord
 #--- Alwin Wang
 #================================================
 
-r <- 0.033        # radius of the ball in m
+r <- 0.033      # radius of the ball in m
 A <- pi*r^2     # cross-sectional area of a ball
 p <- 1.21       # density of air in kg/m^3
+g <- 9.81       # acceleration due to gravity
 
 D <- function(v,vs) {
     d <- (0.55 + 1/((22.5 + 4.2*(v/vs)^2.5)^0.4)) *A*p*v^2/2
@@ -26,3 +27,7 @@ Fx <- function(vx,vy,vz,vh,v,vs,phi) {
 }
 
 
+
+Fz <- function(vx,vy,vz,vh,v,vs,phi) {
+    vz/v * D(v,vs) + vh/v*L(v,vs)*cos(deg2rad(phi)) - g
+}
