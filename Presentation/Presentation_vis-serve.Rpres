@@ -1,0 +1,61 @@
+```{r setup, include=FALSE}
+opts_chunk$set(cache=TRUE)
+```
+<style>
+.midcenter {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+}
+</style>
+
+
+
+Visualizing Serve Trajectories in High-Performance Tennis with R
+=================================
+author: Alwin  Wang
+date: 18th July 2016
+font-family: 'Helvetica'
+transition: rotate
+transition-speed: slow
+#incremental: true
+
+Impact Image
+========================================================
+title: false
+<div class="midcenter" style="margin-left:-400px; margin-top:-300px;">
+<img src="hawkeye.jpg"></img>
+</div>
+
+
+Initial Analysis
+========================================================
+type: section
+```{r,echo=FALSE}
+source("Script Generate Organised Data.R")
+```
+
+
+
+Identifying outliers
+========================================================
+For more details on authoring R presentations click the
+**Help** button on the toolbar.
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+Slide With Code
+========================================================
+```{r}
+summary(cars)
+```
+
+
+
+Slide With Plot
+========================================================
+```{r}
+plot(cars)
+```

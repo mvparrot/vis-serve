@@ -21,21 +21,59 @@ source("Helper Generate Organised Data.R")
 source("Helper Generate Physical Properties.R")
 
 #--- Remove outliers that had been identified
-atp_serves_stub <- atp_serves[atp_serves$start.x >= 8 & atp_serves$start.z > 2.5 & atp_serves$speed >= 25,]
+atp_serves_stub <- atp_serves[atp_serves$serveid != "2_06_02_1_214102.trj" 
+                              & atp_serves$serveid != "2_04_01_1_172646.trj"
+                              & atp_serves$serveid != "3_01_03_2_181341.trj"
+                              & atp_serves$serveid != "4_03_05_1_190717.trj"
+                              & atp_serves$serveid != "4_02_02_1_180400.trj"
+                              & atp_serves$serveid != "1_09_02_1_191947.trj"
+                              & atp_serves$serveid != "1_09_02_1_191947.trj"
+                              & atp_serves$serveid != "4_05_01_1_213913.trj"
+                              & atp_serves$serveid != "3_06_08_2_174140.trj",]
 
-#atp_serves_stub <- atp_serves_stub[1:100,]
+# atp_serves_stub <- atp_serves_stub[1:10,]
 
-sample <- GeneratePoints(atp_serves_stub,server,arc3=10,plot=TRUE)
+sample <- GeneratePoints(atp_serves_stub,
+                         matchid,server,start.x,start.y,start.z,speed,center.x,center.y,net.clearance,
+                         arc3=10,plot=TRUE)
 sample <- physics(sample)
 
 #--- Plot the court in 2D
+# Top down view of all serves
 ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
     geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
-    geom_line(aes(x=pos.x,y=pos.y, group=serveid), data=sample)
+    geom_line(aes(x=pos.x,y=pos.y, group=serveid, colour = server), data=sample, alpha = 0.1) +
+    coord_fixed()
 
+# Side of view of all serves
 ggplot() + geom_segment(aes(x=-11.89, xend=11.89, y=0, yend=0), size=0.5) +
     geom_segment(aes(x=0,xend=0,y=0,yend=1.07), color='darkgrey') +
-    geom_line(aes(x=pos.x, y=pos.z, group=serveid, colour=time), data=sample)
+    geom_line(aes(x=pos.x, y=pos.z, group=serveid, colour=time), data=sample) +
+    coord_fixed()
+
+# Top down view of starting position (atp_serves_stub)
+ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
+    geom_point(data = atp_serves_stub, aes(x=start.x, y=start.y)) +
+    coord_fixed()
+
+# Top down view of landing position (atp_serves_stub) coloured by side
+ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
+    geom_point(data = atp_serves_stub, aes(x=center.x, y=center.y, colour = side)) +
+    coord_fixed()
+
+# Top down view of landing position (atp_serves_stub) coloured by type
+ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
+    geom_point(data = atp_serves_stub, aes(x=center.x, y=center.y, colour = serve_classification)) +
+    coord_fixed()
+
+# Top down view of landing position (atp_serves_stub) coloured by type
+ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
+    geom_point(data = atp_serves_stub, aes(x=center.x, y=center.y, colour = serve_classification)) + 
+    coord_fixed()
 
 #--- Plot the court in 3D
 fed <- sample %>% filter(server == "FEDERER")

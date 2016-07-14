@@ -6,3 +6,5 @@
 Vis-Serve-Trial-1/dictionary.docx
 *.docx
 .Rproj.user
+*.rdb
+*.rdx

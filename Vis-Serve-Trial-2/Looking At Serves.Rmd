@@ -21,7 +21,7 @@ load("atp_serves.RData")
 
 ## Including Plots
 
-
+Starting position from a top down view for Federer and Djokovic.
 ```{r fed-djo, echo=FALSE}
 fed <- atp_serves %>% filter(server == "FEDERER")
 ggplot(fed, aes(x=start.x, y=start.y)) + geom_point()
@@ -32,6 +32,7 @@ ggplot(djok, aes(x=start.x, y=start.y)) + geom_point()
 
 # Examine the contact point of serves
 
+Landing position from a top down view for all serves.
 ```{r}
 ggplot(data=atp_serves, aes(x=center.x, y=center.y)) + 
   geom_point() 
@@ -41,6 +42,8 @@ ggplot(data=atp_serves, aes(x=center.x, y=center.y)) +
 
 # Examine winners
 
+Contour plot of landing position. Columns of Ad and Deuce. Rows of scorer.
+Overlay of two contour plots of scorer. Columns of Ad and Deuce.
 ```{r}
 ggplot(data=filter(atp_serves, scorer != 0), aes(x=center.x, y=center.y)) + 
   geom_point() + geom_density2d() + facet_grid(scorer~side)
@@ -51,6 +54,7 @@ ggplot(data=filter(atp_serves, scorer != 0),
 
 # By server??
 
+Two overlayed countour plots based by scorer. Columns of Ad and Deuce. Rows by server.
 ```{r}
 keep <- atp_serves %>% select(server, matchid) %>% 
   distinct() %>% count(server, sort=TRUE) %>% filter(n>2) 
@@ -62,6 +66,7 @@ ggplot(data=filter(atp_serves_sub, scorer != 0),
 
 # Aces by server
 
+All aces showed in grey. Aces for specific servers are highlighted. Columns are Ad and Deuce. Rows are Server.
 ```{r}
 all <- atp_serves_sub %>% filter(serve_classification == 0) %>%
   select(side, center.x, center.y)
@@ -75,6 +80,7 @@ ggplot(data=all, aes(x=center.x, y=center.y)) +
 
 # Returned by server, compared to aces
 
+Landing position of non-fault serves with aces highlighted. Columns are Ad and Deuce. Rows are Server.
 ```{r}
 servers <- atp_serves_sub %>% filter(serve_classification < 2) %>%
   select(side, center.x, center.y, server, serve_classification)
@@ -86,10 +92,18 @@ ggplot(data=servers, aes(x=center.x, y=center.y)) +
 
 # Returned by server, and receiver
 
+Playing around with axis
 ```{r}
 servers <- atp_serves_sub %>% filter(serve_classification < 2) %>%
   select(side, center.x, center.y, server, serve_classification)
-ggplot(data=servers, aes(x=center.x, y=center.y)) +
+ggplot(data=servers, aes(x=center.y, y=center.x)) +
+  geom_point(data=servers, 
+             aes(colour=factor(serve_classification)), alpha=0.5, size=2) + 
+  facet_grid(side~server) + theme(legend.position="none")
+
+servers <- atp_serves_sub %>% filter(serve_classification < 2) %>%
+  select(side, center.x, center.y, server, serve_classification)
+ggplot(data=servers, aes(x=center.y, y=center.x)) +
   geom_point(data=servers, 
              aes(colour=factor(serve_classification)), alpha=0.5, size=2) + 
   facet_grid(server~side) + theme(legend.position="none")
