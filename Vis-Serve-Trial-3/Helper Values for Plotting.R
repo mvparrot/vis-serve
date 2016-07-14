@@ -65,5 +65,5 @@ PlottingValues <- function(coef.df, ..., tstep = 0.05) {
 #--- Testing
 load("atp_serves.RData")
 data <- PlottingFactors(atp_serves)
-coef.df <- StandardiseCoefficients(data[1:10,],server,start.x, start.y, start.z, center.x, center.y)
+coef.df <- StandardiseCoefficients(data[1:100,],server,start.x, start.y, start.z, center.x, center.y)
 values <- PlottingValues(coef.df,server,start.x,start.y,tstep = 0.1)

@@ -35,7 +35,7 @@ StandardiseCoefficients <- function(data, ..., plzwork=TRUE) {
         mutate(start = start.1*(arc == 1) + start.3*(arc == 3), duration = duration.arc1*(arc == 1) + duration.arc3*(arc == 3)) %>%
         # Create standarised coefficients by explanding `a0 + a1(t-s) + a2(t-s)^2 + a3(t-s)^3`
         mutate(c0 = `0` + `1`*start + `2`*start^2 + `3`*start^3,
-               c1 = `1` + 2*`2`*start + 3*`3`*start^3,
+               c1 = `1` + 2*`2`*start + 3*`3`*start^2,
                c2 = `2` + 3*`3`*start,
                c3 = `3`) %>%
         # Account for if the coefficients need to be flipped
