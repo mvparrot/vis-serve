@@ -86,3 +86,57 @@ theme_blank <- theme_bw()
 theme_blank$line <- element_blank()
 theme_blank$axis.text <- element_blank()
 theme_blank$axis.title <- element_blank()
+
+baseplot <- ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') + 
+    coord_fixed()
+
+baseplot + geom_point(data = atp_serves_stub, aes(x=center.x, y=center.y, colour = serve_classification))
+
+baseplot + geom_line(aes(x=pos.x,y=pos.y, group=serveid, colour = speed), data=sample, alpha = 0.5) + 
+    geom_point(data = atp_serves_stub, alpha = 0.5, aes(x=center.x, y=center.y)) #+ 
+#    geom_density_2d(data = atp_serves_stub, aes(center.x, center.y))
+
+speedhist <- function(classnum, classname) {
+    hist(x = atp_serves_stub$speed[atp_serves_stub$serve_classification == classnum]*3.6,
+         xlim = c(100, 240), plot=TRUE, main = classname, xlab = "Speed")
+}
+
+speedhist(0,"Ace")
+
+#--- This turns the numeric data into factor data.
+atp_serves_stub$serve_classification <- 
+    factor(atp_serves_stub$serve_classification, levels= 0:3, label=c("Ace", "Returned", "Not Returned","Fault"))
+
+ggplot(atp_serves_stub, aes(speed, fill = factor(scorer))) + 
+    geom_density(alpha = 0.2)
+
+ggplot(atp_serves_stub, aes(speed*3.6, fill = serve_classification)) + 
+    geom_density(alpha = 0.25)
+
+ggplot(atp_serves_stub, aes(speed)) + 
+    geom_density(alpha = 0.25)
+
+sample$speedbin <- 
+    cut(sample$speed,c(100/3.6,120/3.6,140/3.6,160/3.6,180/3.6,200/3.6,220/3.6,240/3.6,260/3.6))
+
+
+library("hextri")
+hextri(x=atp_serves_stub$center.x, y=atp_serves_stub$center.y,
+       class=atp_serves_stub$scorer, colours=1:4, nbins = 20, border=TRUE,style="size")
+
+hextri(x=atp_serves_stub$center.x, y=atp_serves_stub$center.y,
+       class=atp_serves_stub$serve_classification, 
+       colours=c("blue","orange","green","red"), nbins = 20, border=TRUE,style="size")
+legend("topleft",fill=c("blue","orange","green","red"),
+       legend=c("Ace","In Play","Not Returned","Fault"),bty="n")
+
+hextri(x=sample$pos.x, y=sample$pos.y,
+       class=sample$arc, 
+       colours=c("blue","orange","green","red"), nbins = 25, border=TRUE,style="size")
+
+hextri(x=sample$pos.x, y=sample$pos.y,
+       class=sample$speedbin, 
+       colours=1:10, nbins = 25, border=TRUE,style="size")
+legend("topleft",fill=1:10,
+       legend=1:10,bty="n")
