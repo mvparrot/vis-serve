@@ -103,4 +103,4 @@ GeneratePoints <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
 
 #sample <- GeneratePoints(atp_serves[1:10,],arc3=10,plot=TRUE)
 
-print("generate organised data functions loaded")
+#print("generate organised data functions loaded")

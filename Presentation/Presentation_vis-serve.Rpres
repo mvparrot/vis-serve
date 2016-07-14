@@ -23,36 +23,51 @@ transition-speed: slow
 Impact Image
 ========================================================
 title: false
-<div class="midcenter" style="margin-left:-400px; margin-top:-300px;">
-<img src="hawkeye.jpg"></img>
-</div>
+```{r gen_data_for_plots,echo=FALSE}
+source("Script Generate Organised Data.R")
+```
+
+```{r all_topdown_byspeed,echo=FALSE}
+ggplot() + geom_path(data = courtTrace, aes(x = x, y = y), color = 'black', size = 0.5) +
+    geom_segment(aes(x= 0, xend= 0, y= -6.5, yend= 6.5), size = 0.5, color = 'darkgrey', lineend = 'round') +
+    geom_line(aes(x=pos.x,y=pos.y, group=serveid, colour = speed), data=sample, alpha = 0.5) +
+    coord_fixed()
+```
 
 
 Initial Analysis
 ========================================================
 type: section
-```{r,echo=FALSE}
-source("Script Generate Organised Data.R")
+
+Features of a Tennis serve
+========================================================
+incremental:true
+There are serveral interesting features in serves that should be visualised to describe a tennis serve
+- Position of the ball in time
+- Curvature of the ball
+- Speed of the ball
+- Displaying multiple serves
+- Serve clusters
+- Accessible visualisations
+incremental:false
+
+Identification of Outliers
+========================================================
+```{r outlier_frombehind,echo=FALSE}
+ggplot() + geom_point(data = atp_serves[atp_serves$start.x>11,], aes(x = start.x, y = start.z, colour = server))
 ```
 
-
-
-Identifying outliers
+Plots in 3D
 ========================================================
-For more details on authoring R presentations click the
-**Help** button on the toolbar.
-
-- Bullet 1
-- Bullet 2
-- Bullet 3
-
-Slide With Code
-========================================================
-```{r}
-summary(cars)
+```{r single_3D,echo=FALSE,cache=FALSE}
+library(plotly)
+library(dplyr)
+library(purrr)
+single3D <- sample %>% filter(serveid == "1_01_03_1_194206.trj")
+plot_ly(single3D, x=pos.x, y=pos.y, z=pos.z, group=serveid, type="scatter3d", mode="lines") %>%
+    add_trace(x=x, y=y, z=z, data=courtTrace, type="scatter3d", mode="lines") %>%
+    layout(scene=list(aspectmode="data"))
 ```
-
-
 
 Slide With Plot
 ========================================================
