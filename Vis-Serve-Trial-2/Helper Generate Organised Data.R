@@ -47,7 +47,7 @@ GeneratePoints <- function(data, ..., arc1=10, arc3=0, plot=FALSE){
     
     #arc2*(start.3 - (start.1+duration.arc1))
     
-    # Adds a duratoin column and a flip column
+    # Adds a duration column and a flip column
     data <- data %>% mutate(duration = arc1*duration.arc1 + arc3*duration.arc3, flip=sign(raw.x0.1))
     
     # Selects the serve id and the additional columsn parsed in for the function
