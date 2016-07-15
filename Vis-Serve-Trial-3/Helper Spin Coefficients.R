@@ -8,15 +8,7 @@ require(dplyr)
 require(purrr)
 require(broom)
 
-data <- PlottingFactors(atp_serves)
-coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y, speed)
-coef.df.spin <- coef.df %>% filter(arc == 1 & c3 != 0) 
-values <- PlottingValues(coef.df.spin,server,start.x,start.y,speed, tstep = 0.1)
-
-test <- values %>% filter(serveid == "1_01_01_1_194218.trj")
-
-spinmodel <- test %>% 
-    select(serveid, arc, speed, ax:az,  vx:vz, vh, v)
+#--- Parameters
 r <- 0.0335     # radius of the ball in m
 A <- pi*r^2     # cross-sectional area of a ball
 p <- 1.21       # density of air in kg/m^3
@@ -57,22 +49,18 @@ az_p <- function(v,vx,vy,vz,w,wx,wy) {
 #   w   wx  wy
 SSR <- function(data, par) {
     with(data, sum(
-        (ax_p(speed,vx,vy,vz,par[1],par[2],par[3]) - ax)^2 + 
-        (ay_p(speed,vx,vy,vz,par[1],par[2],par[3]) - ay)^2 +
-        (az_p(speed,vx,vy,vz,par[1],par[2],par[3]) - az)^2
+        (ax_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - ax)^2 + 
+        (ay_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - ay)^2 +
+        (az_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - az)^2
     ))
 }
-result <- optim(par = c(10,5,5), SSR, data = spinmodel)
 
-
-values <- PlottingValues(coef.df,server,start.x,start.y,speed, tstep = 0.25)
-spinmodelall <- values %>% 
-    select(serveid, arc, speed, ax:az,  vx:vz, vh, v)
-resultall <- spinmodelall %>% 
-    select(serveid, arc, speed, ax:az,  vx:vz, vh, v) %>%
+spinmodel <- values %>% 
+    group_by(serveid,arc) %>%
+    mutate(v.ave = mean(v),
+           a.ave = mean(a),
+           ax.ave = mean(ax),
+           ay.ave = mean(ay),
+           az.ave = mean(az)) %>%
     group_by(serveid,arc) %>%
     do(optimres = optim(par = c(10,5,5), SSR, data = .))
-
-resultsalltidy <- resultall %>% tidy(optimres) %>% spread(parameter,value)
-resultsalltidy %>% rowwise() %>% do(Drag = D(.$parameter1, .$parameter2))
-resultsalltidy %>% mutate(Drag = D(40,parameter1)/m)

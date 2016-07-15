@@ -15,6 +15,8 @@ PlottingValues <- function(coef.df, ..., tstep = 0.05) {
     
     # Calculate the position, velocity and acceleration at any point in time
     out <- coef.df %>% 
+        # Select only the important variables
+        select(extravars, arc, start, duration, dir, c0:c3) %>%
         # Group data by serve id
         group_by(serveid) %>% 
         # Perform the operatoin by rows (important!)
