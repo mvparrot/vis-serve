@@ -56,36 +56,49 @@ PlottingValues <- function(coef.df, ..., tstep = 0.05) {
     # Gets the column numbers of the "serveid" and "..." columns
     extravars <- match(dots[dots%in%colnames(coef.df)], colnames(coef.df))
     
-    # Initialise empty data frame
-    out <- data.frame()
+#--- Original slow code   
+#     # Initialise empty data frame
+#     out <- data.frame()
+#     
+#     # Create a prgressbar to make sure my code is working!!
+#     pb <- txtProgressBar(min = 0, max = nrow(coef.df), style = 3)
+#     
+#     # Generate values for each row
+#     for (row in 1:nrow(coef.df)) {
+#         # Generate a time vector of given step size AND end time
+#         t <- c(seq(from = 0, to = coef.df$duration[row], by = tstep),coef.df$duration[row])
+#         # Output for each individual row
+#         rowout <- t %>% 
+#             # Apply each of the functions rowwise to generate a data frame
+#             map_df(function(t) mutate(rowwise(coef.df[row,]), 
+#                                       # Time column
+#                                       t=t,
+#                                       # Position column
+#                                       p=c0 + c1*t + c2*t^2 + c3*t^3,
+#                                       # Velocity column
+#                                       v=c1 + 2*c2*t + 3*c3*t^2,
+#                                       # Acceleration
+#                                       a=2*c2 + 6*c3*t))
+#         # Add row output to the total output
+#         out <- rbind(out,rowout)
+#         
+#         # Update the progressbar
+#         setTxtProgressBar(pb,row)
+#     }
+#     # Close the progressbar
+#     close(pb)
     
-    # Create a prgressbar to make sure my code is working!!
-    pb <- txtProgressBar(min = 0, max = nrow(coef.df), style = 3)
-    
-    # Generate values for each row
-    for (row in 1:nrow(coef.df)) {
-        # Generate a time vector of given step size AND end time
-        t <- c(seq(from = 0, to = coef.df$duration[row], by = tstep),coef.df$duration[row])
-        # Output for each individual row
-        rowout <- t %>% 
-            # Apply each of the functions rowwise to generate a data frame
-            map_df(function(t) mutate(rowwise(coef.df[row,]), 
-                                      # Time column
-                                      t=t,
-                                      # Position column
-                                      p=c0 + c1*t + c2*t^2 + c3*t^3,
-                                      # Velocity column
-                                      v=c1 + 2*c2*t + 3*c3*t^2,
-                                      # Acceleration
-                                      a=2*c2 + 6*c3*t))
-        # Add row output to the total output
-        out <- rbind(out,rowout)
-        
-        # Update the progressbar
-        setTxtProgressBar(pb,row)
-    }
-    # Close the progressbar
-    close(pb)
+#--- FASTTT Code
+    # Calculate the position, velocity and acceleration at any point in time
+    out <- coef.df %>% 
+        # Group data by serve id
+        group_by(serveid) %>% 
+        # Perform the operatoin by rows (important!)
+        rowwise() %>% 
+        # Create individual sequences for arcs. These will be filled out rowwise
+        do(data.frame(., t = c(seq(0,.$duration,by=0.1),.$duration))) %>%
+        # Calculate the individual position, velocity, acceleration values
+        mutate(p=c0 + c1*t + c2*t^2 + c3*t^3, v=c1 + 2*c2*t + 3*c3*t^2, a=2*c2 + 6*c3*t)
     
     # Clear up the data into a more manageable form for plotting
     out <- out %>%

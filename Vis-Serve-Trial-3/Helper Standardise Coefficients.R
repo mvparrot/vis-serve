@@ -47,6 +47,8 @@ StandardiseCoefficients <- function(data, ..., plzwork=TRUE) {
         mutate(start = (start.3-start.1)*(arc == 3)) %>%
         # Select only the columns that are important
         select(1:length(extravars), arc, start, duration, dir, c0:c3)
+    # Order the data set in a more logical way
+    coef.df <- coef.df[order(coef.df$serveid,coef.df$arc,coef.df$dir),]  
     return(coef.df)
 }
 
