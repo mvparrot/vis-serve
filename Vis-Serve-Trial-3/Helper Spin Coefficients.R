@@ -57,10 +57,18 @@ SSR <- function(data, par) {
 
 spinmodel <- values %>% 
     group_by(serveid,arc) %>%
-    mutate(v.ave = mean(v),
+    mutate(v.ave = mean(c(v,speed)), #can't just add on speed, it will heavily affect arc 3
            a.ave = mean(a),
            ax.ave = mean(ax),
            ay.ave = mean(ay),
            az.ave = mean(az)) %>%
     group_by(serveid,arc) %>%
-    do(optimres = optim(par = c(10,5,5), SSR, data = .))
+    do(optimres = optim(par = c(500,5,5), SSR, data = .))
+
+resultsalltidy <- spinmodel %>% tidy(optimres) %>% spread(parameter,value)
+hist(resultsalltidy$parameter1[resultsalltidy$parameter1<500]*60/(2*3.142))
+
+out <- merge.data.frame(coef.df, resultsalltidy, by = c("serveid", "arc")) %>% 
+    filter(parameter1 < 500)
+ggplot(out, aes(parameter1*60/(2*pi), fill = factor(serve_num))) + 
+    geom_density(alpha = 0.2)

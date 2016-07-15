@@ -65,13 +65,17 @@ SSR <- function(data, par) {
 result <- optim(par = c(10,5,5), SSR, data = spinmodel)
 
 
-values <- PlottingValues(coef.df,server,start.x,start.y,speed, tstep = 0.25)
+data <- PlottingFactors(atp_serves)
+coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y,speed,serve_num,serve_classname)
+values <- PlottingValues(coef.df,server,start.x,start.y,speed,serve_num,serve_classname, tstep = 0.1)
+
 spinmodelall <- values %>% 
-    select(serveid, arc, speed, ax:az,  vx:vz, vh, v)
+    select(serveid, arc, speed,serve_num,serve_classname, ax:az,  vx:vz, vh, v)
 resultall <- spinmodelall %>% 
     select(serveid, arc, speed, ax:az,  vx:vz, vh, v) %>%
     group_by(serveid,arc) %>%
     do(optimres = optim(par = c(10,5,5), SSR, data = .))
+
 
 resultsalltidy <- resultall %>% tidy(optimres) %>% spread(parameter,value)
 resultsalltidy %>% rowwise() %>% do(Drag = D(.$parameter1, .$parameter2))
