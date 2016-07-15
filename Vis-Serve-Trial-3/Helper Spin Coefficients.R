@@ -49,15 +49,20 @@ az_p <- function(v,vx,vy,vz,w,wx,wy) {
 #   w   wx  wy
 SSR <- function(data, par) {
     with(data, sum(
-        (ax_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - ax)^2 + 
-        (ay_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - ay)^2 +
-        (az_p(v.ave,vx,vy,vz,par[1],par[2],par[3]) - az)^2
+        (ax_p(v.adj,vx,vy,vz,par[1],par[2],par[3]) - ax)^2 + 
+        (ay_p(v.adj,vx,vy,vz,par[1],par[2],par[3]) - ay)^2 +
+        (az_p(v.adj,vx,vy,vz,par[1],par[2],par[3]) - az)^2
     ))
 }
 
+
+data <- PlottingFactors(atp_serves[1:100,])
+coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y,speed,serve_num,serve_classname)
+values <- PlottingValues(coef.df,server,start.x,start.y,speed,serve_num,serve_classname, tstep = 0.1)
 spinmodel <- values %>% 
     group_by(serveid,arc) %>%
-    mutate(v.ave = mean(c(v,speed)), #can't just add on speed, it will heavily affect arc 3
+    mutate(v.adj = v, #quantile(v,.4), # adjusted constant v value
+           v.ave = mean(v), 
            a.ave = mean(a),
            ax.ave = mean(ax),
            ay.ave = mean(ay),
@@ -66,9 +71,18 @@ spinmodel <- values %>%
     do(optimres = optim(par = c(500,5,5), SSR, data = .))
 
 resultsalltidy <- spinmodel %>% tidy(optimres) %>% spread(parameter,value)
-hist(resultsalltidy$parameter1[resultsalltidy$parameter1<500]*60/(2*3.142))
+hist(resultsalltidy$parameter1[resultsalltidy$parameter1<600]*60/(2*3.142))
 
 out <- merge.data.frame(coef.df, resultsalltidy, by = c("serveid", "arc")) %>% 
-    filter(parameter1 < 500)
+    filter(parameter1 < 800)
 ggplot(out, aes(parameter1*60/(2*pi), fill = factor(serve_num))) + 
     geom_density(alpha = 0.2)
+ggplot(out, aes(parameter1*60/(2*pi), fill = factor(arc))) + 
+    geom_density(alpha = 0.2)
+ggplot(out, aes(parameter1*60/(2*pi), fill = factor(serve_classname))) + 
+    geom_density(alpha = 0.2)
+ggplot(out, aes(parameter1*60/(2*pi), fill = factor(sign(parameter2)))) + 
+    geom_density(alpha = 0.2)
+median(out$parameter1[out$serve_num == "First Serve"])*60/(2*pi)
+median(out$parameter1[out$serve_num == "Second Serve"])*60/(2*pi)
+    
