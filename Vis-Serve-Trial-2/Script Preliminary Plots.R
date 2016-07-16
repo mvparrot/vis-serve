@@ -27,7 +27,7 @@ atp_serves_stub <- atp_serves[atp_serves$serveid != "2_06_02_1_214102.trj"
                               & atp_serves$serveid != "4_03_05_1_190717.trj"
                               & atp_serves$serveid != "4_02_02_1_180400.trj"
                               & atp_serves$serveid != "1_09_02_1_191947.trj"
-                              & atp_serves$serveid != "3_04_03_1_205313.trj "
+                              & atp_serves$serveid != "3_04_03_1_205313.trj"
                               & atp_serves$serveid != "4_05_01_1_213913.trj"
                               & atp_serves$serveid != "3_06_08_2_174140.trj",]
 

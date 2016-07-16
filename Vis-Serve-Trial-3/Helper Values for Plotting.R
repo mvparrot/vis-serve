@@ -7,11 +7,9 @@ require(tidyr)
 require(dplyr)
 require(purrr)
 
-PlottingValues <- function(coef.df, ..., tstep = 0.05) {
-    # Selects the serveid and the additional columns parsed in for the function
-    dots <- c("serveid", sapply(substitute(list(...))[-1], deparse))
+PlottingValues <- function(coef.df, ..., tstep = 0.08) {
     # Gets the column numbers of the "serveid" and "..." columns
-    extravars <- match(dots[dots%in%colnames(coef.df)], colnames(coef.df))
+    extravars <- 1:(match("arc", colnames(coef.df)) - 1)
     
     # Calculate the position, velocity and acceleration at any point in time
     out <- coef.df %>% 

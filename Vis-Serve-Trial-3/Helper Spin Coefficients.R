@@ -85,7 +85,7 @@ SpinModel <-  function(values) {
     #--- Combine and state estimated results
     resultstidy <- values %>%
         left_join(., parameters, by = c("serveid", "arc")) %>%
-        mutate(cd = Cd(v,w), Cl = Cl(v,w),
+        mutate(Cd = Cd(v,w), Cl = Cl(v,w),
                ax_p = ax_p(v,vx,vy,vz,w,wx,wy),
                ay_p = ay_p(v,vx,vy,vz,w,wx,wy),
                az_p = az_p(v,vx,vy,vz,w,wx,wy)) %>%
