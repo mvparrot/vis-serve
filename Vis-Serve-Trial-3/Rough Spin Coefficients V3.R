@@ -7,6 +7,7 @@ require(tidyr)
 require(dplyr)
 require(purrr)
 require(broom)
+require(ggplot2)
 
 data <- PlottingFactors(atp_serves)
 coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y, speed)
@@ -69,6 +70,8 @@ data <- PlottingFactors(atp_serves)
 coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y,speed,serve_num,serve_classname)
 values <- PlottingValues(coef.df,server,start.x,start.y,speed,serve_num,serve_classname, tstep = 0.1)
 
+
+### I SHOULD MAKE IT CUT AFTER A CERTAIN DISTANCE X SO THE VALUES FOR ARC3 AREN'T MESSED UP
 spinmodelall <- values %>% 
     select(serveid, arc, speed,serve_num,serve_classname, ax:az,  vx:vz, vh, v)
 resultall <- spinmodelall %>% 

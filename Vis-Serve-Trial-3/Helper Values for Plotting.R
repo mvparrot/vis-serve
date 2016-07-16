@@ -47,9 +47,9 @@ PlottingValues <- function(coef.df, ..., tstep = 0.05) {
 }
 
 #--- Testing
-load("atp_serves.RData")
-#load("Helper Factors for Plotting.R")
-#load("Helper Standardise Coefficients.R")
-data <- PlottingFactors(atp_serves)
-coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y)
-values <- PlottingValues(coef.df,server,start.x,start.y,tstep = 0.75)
+# load("atp_serves.RData")
+# #load("Helper Factors for Plotting.R")
+# #load("Helper Standardise Coefficients.R")
+# data <- PlottingFactors(atp_serves)
+# coef.df <- StandardiseCoefficients(data,server,start.x, start.y, start.z, center.x, center.y)
+# values <- PlottingValues(coef.df,server,start.x,start.y,tstep = 0.75)
