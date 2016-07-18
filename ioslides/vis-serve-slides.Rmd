@@ -149,36 +149,87 @@ court_topdown +
 
 ## Landing Position {.flexbox .vcenter}
 ```{r landing_contours, echo=FALSE, cache=TRUE}
-plot_multiple_games <- MultipleGames(5)
+plot_multiple_games <- MultipleGames(4)
 plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
 court_service + 
     geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) +
-    facet_wrap(serve_num~server)
+    facet_grid(serve_num~server)
 ```
 
 ## Landing Position with Overlays {.flexbox .vcenter}
-
-## R Markdown
-
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
-
-## Slide with Bullets
-
-- Bullet 1
-- Bullet 2
-- Bullet 3
-
-## Slide with R Code and Output
-
-```{r}
-summary(cars)
+```{r landing_contours_ace, echo=FALSE, cache=TRUE}
+server_name <- "RAONIC"
+plot_gg <- plot_perserve %>% filter(server %in% server_name)
+court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) +
+    geom_point(data = filter(plot_gg, serve_classname == "Ace"), aes(x=center.x, y=center.y, colour=speed_class, size=2)) + 
+    facet_wrap(serve_num~server)
 ```
 
-## Slide with Plot
-
-```{r, echo=FALSE}
-plot(cars)
+## Ball Strike {.flexbox .vcenter}
+```{r strike_behind, echo=FALSE, cache=TRUE}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+court_behind + 
+    geom_point(data = plot_gg, aes(x=start.y, y=start.z, colour=speed_class)) +
+    facet_grid(server~serve_num)
 ```
 
+## Ball Strike and Court Strike{.flexbox .vcenter}
+```{r strike_court_x, echo=FALSE, cache=TRUE}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+ggplot() + 
+    geom_point(data = plot_gg, aes(x=start.x, y=center.x, colour=speed_class)) +
+    facet_grid(server~serve_num)
+```
+
+## Ball Strike and Court Strike{.flexbox .vcenter}
+```{r strike_court_y, echo=FALSE, cache=TRUE}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+ggplot() + 
+    geom_point(data = plot_gg, aes(x=start.y, y=center.y, colour=speed_class)) +
+    facet_grid(server~serve_num)
+```
+
+## Speed Analysis {.flexbox .vcenter}
+```{r speed_first_second, echo=FALSE, cache=TRUE}
+# First vs second serve
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, scorername != "No Winner")
+ggplot(data = plot_gg, aes(speedkmph, fill=scorername)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+```
+
+## Speed Analysis {.flexbox .vcenter}
+```{r speed_first_second_server, echo=FALSE, cache=TRUE}
+# First vs second serve
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+ggplot(data = plot_gg, aes(speedkmph, fill=serve_num)) + 
+    geom_density(alpha = 0.2)+ facet_wrap(~server, scales = "free_y")
+```
+
+## Spin
+```{r spin_coolserves, echo=FALSE}
+# First vs second serve
+serve_coolarc <- c("5_02_02_1_190119.trj","3_01_02_1_171036.trj")
+plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
+plot_ly(plot_gg, x=px, y=py, z=pz, group=serveid, type="scatter3d", mode="lines") %>%
+    add_trace(x=x, y=y, z=z, data=court_trace, type="scatter3d", mode="lines") %>%
+    add_trace(x=x, y=y, z=z, data=net_trace, type="scatter3d", mode="lines") %>%
+    layout(scene=list(aspectmode="data"))
+```
+
+## Future Research: Model Estimation
+```{r model_est, echo=FALSE, cache=TRUE}
+# First vs second serve
+plot_gg <- plot_perserve %>% filter(usefulness_arc1 > 0.5)
+#hist(plot_gg$usefulness_arc1)
+ggplot(data = plot_gg, aes(usefulness_arc1)) + 
+    geom_density(alpha = 0.2)
+```
+
+
+## Questions?
