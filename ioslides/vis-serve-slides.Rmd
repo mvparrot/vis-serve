@@ -6,6 +6,8 @@ output:
     ioslides_presentation
 ---
 
+on tablet now :)s
+
 ```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
 #--- Packages Required
 require(tidyr)
