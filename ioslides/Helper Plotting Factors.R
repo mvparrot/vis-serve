@@ -17,6 +17,3 @@ PlottingFactors <- function(data) {
     # Output the data with additional columns
     return(data)
 }
-
-#--- Testing
-# data <- PlottingFactors(atp_serves)

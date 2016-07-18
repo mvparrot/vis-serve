@@ -13,7 +13,7 @@ require(hextri)
 
 #--- Calling initial functions
 data <- PlottingFactors(atp_serves)
-coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,serve_num,serve_classname,side,scorername,
+coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
                                    start.x, start.y, start.z, center.x, center.y)
 values <- PlottingValues(coef.df,tstep = 0.08)
 resultstidy <-  SpinModel(values)
@@ -27,6 +27,19 @@ serve_outliers <- data.frame(serveid = c(
 # Filter out outliers
 plot_sample <- resultstidy %>% 
     filter(!(serveid %in% serve_outliers$serveid))
+plot_sample$speed_class <- cut(plot_sample$speedkmph,c(100,120,140,160,180,200,220,240,260))
+
+# Data per serve
+plot_perserve <- plot_sample  %>% 
+    select(-(t:a), -(ax_p:az_p)) %>%
+    group_by(serveid, arc) %>%
+    mutate(Cd_ave = mean(Cd), Cl_ave = mean(Cl)) %>%
+    distinct(.keep_all = TRUE) %>%
+    gather(key, value, -(1:(match("arc", colnames(.))))) %>%
+    unite(key, c(key,arc), sep="_arc") %>%
+    spread(key, value) %>%
+    distinct(.keep_all = TRUE)
+plot_perserve$speed_class <- cut(plot_perserve$speedkmph,c(100,120,140,160,180,200,220,240,260))
 
 #--- Select players with multiple games
 MultipleGames <- function(min) {
@@ -125,3 +138,89 @@ plot_ly(plot_gg, x=px, y=py, z=pz, group=serveid, type="scatter3d", mode="lines"
     add_trace(x=x, y=y, z=z, data=net_trace, type="scatter3d", mode="lines") %>%
     layout(scene=list(aspectmode="data"))
 
+#--- Hextri Plots
+# Landing position coloured by scorer
+hextri(x=plot_perserve$center.x, y=plot_perserve$center.y,
+       class=plot_perserve$scorername, colours=c("red","orange","green"), nbins = 20, border=TRUE,style="size")
+legend("topleft",fill=c("green","orange","red"),
+       legend=c("Server", "No Winner", "Receiver"),bty="n")
+
+# Alternate form
+rval<-hextri(x=plot_perserve$center.x, y=plot_perserve$center.y,
+             class=plot_perserve$scorername, colours=c("red","orange","green"), nbins = 20, border=TRUE,style="size")
+plot(y~x,data=rval,type="n")
+with(rval, polygon(x,y,col=col,border=NA))
+legend("topleft",fill=c("green","orange","red"),
+       legend=c("Server", "No Winner", "Receiver"),bty="n")
+
+# Landing position coloured by classification
+hextri(x=plot_perserve$center.x, y=plot_perserve$center.y,
+       class=plot_perserve$serve_classname, 
+       colours=c("green","orange","yellow","red"), nbins = 20, border=TRUE,style="size")
+legend("topleft",fill=c("green","yellow","orange","red"),
+       legend=c("Ace","Not Returned","In Play","Fault"),bty="n")
+
+# All positions coloured by first or second serve
+hextri(x=plot_sample$px, y=plot_sample$py,
+       class=plot_sample$serve_num, 
+       colours=c("blue","orange","green","red"), nbins = 25, border=TRUE,style="size")
+
+# All positions coloured by speed class
+hextri(x=plot_sample$px, y=plot_sample$py,
+       class=plot_sample$speed_class, 
+       colours=c("grey10","grey20","grey30","grey40","grey50","grey60","grey70","grey80"), nbins = 25, border=TRUE,style="size")
+legend("topleft",fill=1:10,
+       legend=1:10,bty="n")
+
+#--- Speed investigation
+# Played at least 2 games servers
+plot_multiple_games <- MultipleGames(2)
+plot_gg <- plot_sample %>% filter(server %in% plot_multiple_games$server)
+# First vs second serve
+ggplot(data = plot_gg, aes(speedkmph, fill=factor(serve_num))) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+
+# First vs second serve broken by type
+ggplot(data = plot_gg, aes(speedkmph, fill=scorername)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+
+ggplot(data = plot_gg, aes(speedkmph, fill=factor(speed_class))) + 
+    geom_density(alpha = 0.2)+ facet_wrap(~serve_classname)
+
+ggplot(data = plot_gg, aes(speedkmph, fill=factor(side))) + 
+    geom_density(alpha = 0.2)+ facet_wrap(~server)
+
+ggplot(data = plot_gg, aes(speedkmph, fill=factor(serve_num))) + 
+    geom_density(alpha = 0.2)+ facet_wrap(~server)
+
+#--- Landing spot investigation
+plot_arc1 <- plot_sample %>% 
+    filter(arc == 1) %>%
+    group_by(serveid) %>%
+    top_n(4,t) %>%
+    top_n(2,-t)
+plot_arc3 <- plot_sample %>% 
+    filter(arc == 3) %>%
+    group_by(serveid) %>%
+    top_n(4,-t) %>%
+    top_n(2,t)
+plot_gg <- plot_sample
+
+court_topdown + geom_point(data = plot_gg, aes(x=center.x, y=center.y, colour = serve_classname), alpha=0.5)
+
+court_topdown + geom_density2d(data = plot_gg, aes(x=center.x, y=center.y, colour = serve_classname), size=0.5)
+
+court_topdown + 
+    geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = scorername), alpha=0.5)
+
+court_topdown + 
+    geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = scorername), alpha=0.5) +
+    geom_path(data = filter(plot_arc1, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) +
+    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5)
+
+#--- Single server
+plot_gg <- plot_sample %>% filter(server == "RAONIC")
+plot_ly(plot_gg, x=px, y=py, z=pz, type="surface") %>%
+    add_trace(x=x, y=y, z=z, data=court_trace, type="scatter3d", mode="lines") %>%
+    add_trace(x=x, y=y, z=z, data=net_trace, type="scatter3d", mode="lines") %>%
+    layout(scene=list(aspectmode="data"))

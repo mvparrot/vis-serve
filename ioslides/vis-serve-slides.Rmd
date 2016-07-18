@@ -1,0 +1,73 @@
+---
+title: "Visualising Tennis Serves"
+author: "Alwin"
+date: "18 July 2016"
+output: ioslides_presentation
+---
+
+```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+#--- Packages Required
+require(tidyr)
+require(dplyr)
+require(purrr)
+require(broom)
+require(ggplot2)
+require(plotly)
+require(hextri)
+```
+
+```{r, scripts, echo = FALSE, messages=FALSE, warning=FALSE}
+source("Helper Load Data.R")
+source("Helper Plotting Factors.R")
+source("Helper Standardise Coefficients.R")
+source("Helper Plotting Values.R")
+source("Helper Spin Coefficients.R")
+source("Helper Basic Plots.R")
+```
+```{r, initial functions, echo = FALSE, messages=FALSE, warning=FALSE}
+data <- PlottingFactors(atp_serves[1:10,])
+coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
+                                   start.x, start.y, start.z, center.x, center.y)
+values <- PlottingValues(coef.df,tstep = 0.08)
+resultstidy <-  SpinModel(values)
+serve_outliers <- data.frame(serveid = c(
+    "1_09_02_1_191947.trj", "2_04_01_1_172646.trj", "2_06_02_1_214102.trj",
+    "3_01_03_2_181341.trj", "3_04_03_1_205313.trj", "3_06_08_2_174140.trj",
+    "4_02_02_1_180400.trj", "4_03_05_1_190717.trj", "4_05_01_1_213913.trj"))
+# Filter out outliers
+plot_sample <- resultstidy %>% 
+    filter(!(serveid %in% serve_outliers$serveid))
+```
+
+## Sample Plot
+```{r coolarc_topdown, echo=FALSE}
+plot_gg <- plot_sample
+# Top Down
+court_topdown + geom_path(aes(x=px,y=py, group=serveid, colour = server), data=plot_gg, alpha = 1)
+```
+
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Code and Output
+
+```{r}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
