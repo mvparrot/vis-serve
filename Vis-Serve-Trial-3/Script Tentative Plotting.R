@@ -224,3 +224,46 @@ plot_ly(plot_gg, x=px, y=py, z=pz, type="surface") %>%
     add_trace(x=x, y=y, z=z, data=court_trace, type="scatter3d", mode="lines") %>%
     add_trace(x=x, y=y, z=z, data=net_trace, type="scatter3d", mode="lines") %>%
     layout(scene=list(aspectmode="data"))
+
+# filter(plot_gg,w_rpm < 5000, arc == 1, !is.na(usefulness)) %>% select(usefulness)  %>% distinct(.keep_all=TRUE)
+ggplot(data = filter(plot_gg,w_rpm < 5000, arc ==1), aes(w_rpm, fill=speed_class)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_classname)
+
+ggplot(data = filter(plot_gg,w_rpm < 5000, arc ==1), aes(w_rpm, fill=speed_class)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+
+ggplot(data = filter(plot_gg,w_rpm < 5000, arc ==1), aes(w_rpm, fill=speed_class)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+
+require(akima)
+resolution <- 0.1 # you can increase the resolution by decreasing this number (warning: the resulting dataframe size increase very quickly)
+a <- interp(x=plot_gg$px, y=plot_gg$py, z=plot_gg$v, 
+            xo=seq(min(plot_gg$px),max(plot_gg$px),by=resolution), 
+            yo=seq(min(plot_gg$py),max(plot_gg$py),by=resolution), duplicate="mean")
+image(a) #you can of course modify the color palette and the color categories. See ?image for more explanation
+
+library(mvtnorm);
+library(MASS);
+set.seed(5)
+sigma <-matrix(c(4,2,2,3), ncol=2)
+x<-rmvnorm(n=500, mean=c(1,2), sigma=sigma,
+           method="chol")
+z<-kde2d(x[,1],x[,2],n=200);
+par(mar=rep(0,4))
+persp(z,theta=0,phi=90,col=heat.colors(199,alpha=1),
+      shade=0.4,border=NA,box=FALSE)
+
+z<-kde2d(plot_gg$px,plot_gg$py,n=200);
+par(mar=rep(0,4))
+persp(plot_gg$pz,theta=0,phi=90,col=heat.colors(199,alpha=1),
+      shade=0.4,border=NA,box=FALSE)
+
+require(hexbin)
+court_topdown + 
+    stat_binhex(data = plot_gg, aes(x=px, y=py), bins = 25, colour = "gray", alpha = 0.7) +
+    scale_fill_gradientn(colours = c("yellow","orange","red"))
+
+require(aplpack)
+plot_gg <- plot_perserve[1:12,] 
+plot_gg <- plot_perserve %>% select(serveid, speedkmph, start.x, start.y, start.z, centre.x, center.y)
+faces(atp_serves[1:12,3:30]) 

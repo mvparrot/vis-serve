@@ -2,7 +2,8 @@
 title: "Visualising Tennis Serves"
 author: "Alwin"
 date: "18 July 2016"
-output: ioslides_presentation
+output:
+    ioslides_presentation
 ---
 
 ```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
@@ -14,6 +15,8 @@ require(broom)
 require(ggplot2)
 require(plotly)
 require(hextri)
+require(hexbin)
+require(aplpack)
 ```
 
 ```{r, scripts, echo = FALSE, messages=FALSE, warning=FALSE}
@@ -24,8 +27,8 @@ source("Helper Plotting Values.R")
 source("Helper Spin Coefficients.R")
 source("Helper Basic Plots.R")
 ```
-```{r, initial functions, echo = FALSE, messages=FALSE, warning=FALSE}
-data <- PlottingFactors(atp_serves[1:10,])
+```{r, initial functions, echo = FALSE, messages=FALSE, warning=FALSE, cache=TRUE}
+data <- PlottingFactors(atp_serves)
 coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
                                    start.x, start.y, start.z, center.x, center.y)
 values <- PlottingValues(coef.df,tstep = 0.08)
@@ -37,15 +40,123 @@ serve_outliers <- data.frame(serveid = c(
 # Filter out outliers
 plot_sample <- resultstidy %>% 
     filter(!(serveid %in% serve_outliers$serveid))
+# Data per serve
+plot_perserve <- plot_sample  %>% 
+    select(-(t:a), -(ax_p:az_p)) %>%
+    group_by(serveid, arc) %>%
+    mutate(Cd_ave = mean(Cd), Cl_ave = mean(Cl)) %>%
+    distinct(.keep_all = TRUE) %>%
+    gather(key, value, -(1:(match("arc", colnames(.))))) %>%
+    unite(key, c(key,arc), sep="_arc") %>%
+    spread(key, value) %>%
+    distinct(.keep_all = TRUE)
+#--- Select players with multiple games
+MultipleGames <- function(min) {
+    multiple_games <- atp_serves %>% 
+        select(server, matchid) %>% distinct() %>% 
+        count(server, sort=TRUE) %>% filter(n >= min)
+    plot_sample %>%
+        filter(server %in% multiple_games$server)
+}
 ```
 
-## Sample Plot
-```{r coolarc_topdown, echo=FALSE}
+## Looking at all the Data {.flexbox .vcenter}
+```{r coolarc_topdown, echo=FALSE, cache=TRUE}
 plot_gg <- plot_sample
 # Top Down
 court_topdown + geom_path(aes(x=px,y=py, group=serveid, colour = server), data=plot_gg, alpha = 1)
 ```
 
+## Looking at some of the Data 
+Clearly there is a lot going on in serve data!
+<div class="centered">
+```{r cool_behind, echo=FALSE, cache=TRUE}
+#--- Plot single serve
+serve_coolarc <- c("5_02_02_1_190119.trj","3_01_02_1_171036.trj")
+plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
+# From Behind
+court_behind + geom_path(aes(x=py,y=pz, group=serveid, colour = server), data=plot_gg, alpha = 1) + 
+    geom_path(data = net_trace, aes(x = y, y = z), color = 'blue', size = 1.0)
+```
+</div>
+
+## Look at the Data
+So clearly there is a lot going on in Tennis serve data!
+<div class="columns-2">
+
+> - Position
+    - Time, x, y, z coordinates
+> - Speed
+    - Speed on impact, speed throughout the serve
+> - Curvature
+    - Spin on the ball, Wind effects
+> - Location
+    - Single serve, Serve cluster
+    
+</div>
+
+## Ways to Visualise Multivariable Data 
+> There are good ways ...
+> And bad ways...
+
+## Not so good way {.flexbox .vcenter}
+```{r chernoff, echo=FALSE, cache=TRUE}
+faces(atp_serves[1:12,3:30])
+```
+
+
+## Position - Frequency {.flexbox .vcenter}
+```{r all_topdown_hexbin, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_binhex(data = plot_gg, aes(x=px, y=py), bins = 25, colour = "gray", alpha = 0.7) +
+    scale_fill_gradientn(colours = c("yellow","orange","red"))
+```
+
+## Position - Coloured by a variable {.flexbox .vcenter}
+```{r all_topdown_hextri, echo=FALSE, cache=TRUE}
+plot_gg <- plot_sample
+hextri(x=plot_gg$px, y=plot_gg$py,
+       class=plot_gg$serve_num, 
+       colours=c("blue","green"), nbins = 25, border=TRUE,style="size")
+    lines(x=court_trace$x, y=court_trace$y, lwd = 2)
+    legend("topright",fill=c("blue","green"),
+       legend=c("First Serve", "Second Serve"),bty="n")
+```
+
+## Landing Position {.flexbox .vcenter}
+```{r all_land_split, echo=FALSE, cache=TRUE}
+#--- Break into before bounce and after bounce
+plot_arc1 <- plot_sample %>% 
+    filter(arc == 1) %>%
+    group_by(serveid) %>%
+    top_n(4,t) %>%
+    top_n(2,-t)
+plot_arc3 <- plot_sample %>% 
+    filter(arc == 3) %>%
+    group_by(serveid) %>%
+    top_n(4,-t) %>%
+    top_n(2,t)
+plot_gg <- plot_sample
+
+#--- Plot
+court_topdown + 
+    geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = scorername), alpha=0.5) +
+    geom_path(data = filter(plot_arc1, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) +
+    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5)
+```
+
+## Landing Position {.flexbox .vcenter}
+```{r landing_contours, echo=FALSE, cache=TRUE}
+plot_multiple_games <- MultipleGames(5)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) +
+    facet_wrap(serve_num~server)
+```
+
+## Landing Position with Overlays {.flexbox .vcenter}
 
 ## R Markdown
 

@@ -8,3 +8,4 @@ Vis-Serve-Trial-1/dictionary.docx
 .Rproj.user
 *.rdb
 *.rdx
+/ioslides/*
