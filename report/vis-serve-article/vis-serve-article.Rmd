@@ -1,0 +1,206 @@
+---
+author:
+  - name: Alwin Wang
+    affiliation: Monash University
+    address: >
+      First line
+      Second line
+    email: awan39@student.monash.edu
+    url: http://rstudio.com
+title:
+  formatted: "Visualising Serve Trajectories in High-Performance Tennis with R"
+  # If you use tex in the formatted title, also supply version without
+  plain:     "Visualising Serve Trajectories in High-Performance Tennis with R"
+  # For running headers, if needed
+  short:     "Visualising Serves"
+abstract: >
+  This paper investigates methods to effectively visualise key characteristics of serves using trajectory of elite tennis athletes provided by Tennis Australia. The key characteristics identified were the position, velocity and spin of a ball as well as the location of single and multiple serve clusters. For the visuals presented in the paper, a sample of 2000 serves from the 2016 Australian Open from thirty three servers was used.  
+keywords:
+  # at least one keyword must be supplied
+  formatted: [keywords, not capitalized, "\\proglang{Java}", REMEMBER TO ADD TITLES TO YOUR GRAPHS]
+  plain:     [keywords, not capitalized, Java, REMEMBER TO ADD TITLES TO YOUR GRAPHS]
+preamble: >
+  \usepackage{amsmath}
+output: rticles::jss_article
+---
+
+# Introduction
+
+This template demonstrates some of the basic latex you'll need to know to create a JSS article.
+
+```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+#--- Packages Required
+require(tidyr)
+require(dplyr)
+require(purrr)
+require(broom)
+require(ggplot2)
+require(plotly)
+require(hextri)
+require(hexbin)
+require(RColorBrewer)
+require(aplpack)
+```
+```{r, scripts, echo = FALSE, messages=FALSE, warning=FALSE}
+#--- Load functions from helper scripts
+source("Helper Load Data.R")
+source("Helper Plotting Factors.R")
+source("Helper Standardise Coefficients.R")
+source("Helper Plotting Values.R")
+source("Helper Spin Coefficients.R")
+source("Helper Basic Plots.R")
+```
+```{r, initial functions, echo = FALSE, messages=FALSE, warning=FALSE, cache=TRUE}
+#--- Generate the data for plotting
+data <- PlottingFactors(atp_serves)
+coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
+                                   start.x, start.y, start.z, center.x, center.y)
+values <- PlottingValues(coef.df,tstep = 0.08)
+resultstidy <-  SpinModel(values)
+serve_outliers <- data.frame(serveid = c(
+    "1_09_02_1_191947.trj", "2_04_01_1_172646.trj", "2_06_02_1_214102.trj",
+    "3_01_03_2_181341.trj", "3_04_03_1_205313.trj", "3_06_08_2_174140.trj",
+    "4_02_02_1_180400.trj", "4_03_05_1_190717.trj", "4_05_01_1_213913.trj"))
+# Filter out outliers
+plot_sample <- resultstidy %>% 
+    filter(!(serveid %in% serve_outliers$serveid))
+# Data per serve
+plot_perserve <- plot_sample  %>% 
+    select(-(t:a), -(ax_p:az_p)) %>%
+    group_by(serveid, arc) %>%
+    mutate(Cd_ave = mean(Cd), Cl_ave = mean(Cl)) %>%
+    distinct(.keep_all = TRUE) %>%
+    gather(key, value, -(1:(match("arc", colnames(.))))) %>%
+    unite(key, c(key,arc), sep="_arc") %>%
+    spread(key, value) %>%
+    distinct(.keep_all = TRUE)
+#--- Select players with multiple games
+MultipleGames <- function(min) {
+    multiple_games <- atp_serves %>% 
+        select(server, matchid) %>% distinct() %>% 
+        count(server, sort=TRUE) %>% filter(n >= min)
+    plot_sample %>%
+        filter(server %in% multiple_games$server)
+}
+```
+
+# Position
+asdfaslkfj asfldkjasd f
+```{r all_topdown, echo=FALSE, cache=TRUE}
+plot_gg <- plot_sample
+# Top Down
+court_topdown + geom_path(aes(x=px,y=py, group=serveid, colour = server), data=plot_gg, alpha = 1)
+```
+
+```{r all_topdown_hexbin, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_binhex(data = plot_gg, aes(x=px, y=py), bins = 20, 
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(5, "Blues"), 
+                         guide = "colourbar",
+                         name = "Frequeny")
+```
+
+```{r all_topdown_height, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=pz), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(8, "PuRd"), 
+                         guide = "colourbar",
+                         name = "Ave. \nHeight")
+```
+
+
+```{r all_topdown_vel, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=speedkmph), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)")
+```
+
+```{r all_topdown_vel, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=v), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(8, "Oranges"), 
+                         guide = "colourbar",
+                         name = "Average \nvelocity")
+```
+
+
+```{r all_topdown_side, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- filter(plot_sample, scorername != "No Winner")
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=scorername), bins = 30, 
+                fun = function(x) {
+                   tab <- table(x)
+                   names(tab)[which.max(tab)]},
+                colour = "white", alpha = 0.25) +
+    scale_fill_discrete(name = "Most \nOccurring")
+```
+
+```{r all_topdown_classname, echo=FALSE, cache=TRUE}
+#--- Top down using hexbins
+plot_gg <- filter(plot_sample, serve_classname != "Fault")
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=serve_classname), bins = 30, 
+                fun = function(x) {
+                   tab <- table(x)
+                   names(tab)[which.max(tab)]},
+                colour = "white", alpha = 0.25) +
+    scale_fill_discrete(name = "Most \nOccurring")
+```
+
+```{r all_topdown_hextriclass, echo=FALSE, cache=TRUE}
+plot_gg <- filter(plot_sample, classname != "Fault")
+hextri(x=plot_gg$px, y=plot_gg$py,
+       class=plot_gg$serve_classname, 
+       colours=c("blue","orange","green", "red"), nbins = 30, border=TRUE,style="size")
+    lines(x=court_trace$x, y=court_trace$y, lwd = 2)
+    legend(2,10,fill=c("blue","green","orange"),
+       legend=c("Ace", "Not Returned", "Returned"),bty="n")
+```
+
+
+
+# Spin
+
+```{r coolarc_behind, echo=FALSE, cache=TRUE}
+#--- Plot single serve
+serve_coolarc <- c("5_02_02_1_190119.trj","3_01_02_1_171036.trj")
+plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
+# From Behind
+court_behind + geom_path(aes(x=py,y=pz, group=serveid, colour = server), data=plot_gg, alpha = 1) + 
+    geom_path(data = net_trace, aes(x = y, y = z), color = 'blue', size = 1.0)
+```
+
+## Code formatting
+
+Don't use markdown, instead use the more precise latex commands:
+
+* \proglang{Java}
+* \pkg{plyr}
+* \code{print("abc")}
+
+# R code
+
+Can be inserted in regular R markdown blocks.
+
+```{r}
+x <- 1:10
+x
+```
