@@ -146,7 +146,8 @@ plot_gg <- plot_sample
 court_topdown + 
     geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = scorername), alpha=0.5) +
     geom_path(data = filter(plot_arc1, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) +
-    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5)
+    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) + 
+    
 ```
 
 ## Landing Position {.flexbox .vcenter}

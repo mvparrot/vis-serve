@@ -25,6 +25,9 @@ axis_labels <- data.frame(x.break = c(-21.89:-11.89, -6.4, 0, 6.4, 11.89),
                           z.break = c(0,0.992,2,3,4),
                           z.label = c("Ground", "Net", "2m", "3m", "4m"))
 
+#--- ggplot2 global options
+theme_set(theme_bw()) 
+
 #--- Top down court view
 court_topdown <- ggplot() + 
     labs(x = "x direction", y = "y direction") + 
@@ -34,8 +37,7 @@ court_topdown <- ggplot() +
                        labels = axis_labels$y.label) +
     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-    coord_fixed() +
-    theme_bw()
+    coord_fixed()
 
 #--- Service box
 court_service <- ggplot() + 
@@ -46,8 +48,7 @@ court_service <- ggplot() +
                        labels = axis_labels$y.label) +
     geom_path(data = service_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-    coord_fixed() +
-    theme_bw()
+    coord_fixed()
 
 #--- Side on court view
 court_sideon <- ggplot() + 
@@ -58,8 +59,7 @@ court_sideon <- ggplot() +
                        labels = axis_labels$z.label) +
     geom_path(data = court_trace, aes(x = x, y = z), color = 'black', size = 1) +
     geom_path(data = net_trace, aes(x = x, y = z), color = 'grey40', size=1, lineend = 'round') +
-    coord_fixed() +
-    theme_bw()
+    coord_fixed()
 
 #--- Behind court view
 court_behind <- ggplot() + 
@@ -70,8 +70,7 @@ court_behind <- ggplot() +
     labs(x = "y direction", y = "z direction") +
     geom_path(data = court_trace, aes(x = y, y = z), color = 'black', size = 1) +
     geom_path(data = net_trace, aes(x = y, y = z), color = 'grey40', size = 1) +
-    coord_fixed() +
-    theme_bw()
+    coord_fixed()
 
 #--- 3D court view
 court_3d <- plot_ly(x=x, y=y, z=z, data=court_trace, type="scatter3d", mode="lines") %>%

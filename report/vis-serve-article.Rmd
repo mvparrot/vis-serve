@@ -1,0 +1,334 @@
+---
+author:
+  - name: Alwin Wang
+    affiliation: Monash University
+    address: >
+      First line
+      Second line
+    email: awan39@student.monash.edu
+    url: http://rstudio.com
+title:
+  formatted: "Visualising Serve Trajectories in High-Performance Tennis with R"
+  # If you use tex in the formatted title, also supply version without
+  plain:     "Visualising Serve Trajectories in High-Performance Tennis with R"
+  # For running headers, if needed
+  short:     "Visualising Serves"
+abstract: >
+  This paper investigates methods to effectively visualise key characteristics of serves using trajectory of elite tennis athletes provided by Tennis Australia. The key characteristics identified were the position, velocity and spin of a ball as well as the location of single and multiple serve clusters. For the visuals presented in the paper, a sample of 2000 serves from the 2016 Australian Open from thirty three servers was used.  
+keywords:
+  # at least one keyword must be supplied
+  formatted: [keywords, not capitalized, "\\proglang{Java}", REMEMBER TO ADD TITLES TO YOUR GRAPHS]
+  plain:     [keywords, not capitalized, Java, REMEMBER TO ADD TITLES TO YOUR GRAPHS]
+preamble: >
+  \usepackage{amsmath}
+output: rticles::jss_article
+---
+
+# Introduction
+
+This template demonstrates some of the basic latex you'll need to know to create a JSS article.
+
+```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+#--- Packages Required
+require(MASS)
+require(tidyr)
+require(dplyr)
+require(purrr)
+require(broom)
+require(ggplot2)
+require(plotly)
+require(hextri)
+require(hexbin)
+require(RColorBrewer)
+require(aplpack)
+```
+```{r, scripts, echo = FALSE, messages=FALSE, warning=FALSE}
+#--- Load functions from helper scripts
+source("Helper Load Data.R")
+source("Helper Plotting Factors.R")
+source("Helper Standardise Coefficients.R")
+source("Helper Plotting Values.R")
+source("Helper Spin Coefficients.R")
+source("Helper Basic Plots.R")
+```
+```{r generatedata, echo = FALSE, messages=FALSE, warning=FALSE, cache=TRUE}
+#--- Generate the data for plotting
+data <- PlottingFactors(atp_serves)
+coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
+                                   start.x, start.y, start.z, center.x, center.y)
+values <- PlottingValues(coef.df,tstep = 0.08)
+resultstidy <-  SpinModel(values)
+```
+
+```{r tidydata, echo = FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+serve_outliers <- data.frame(serveid = c(
+    "1_09_02_1_191947.trj", "2_04_01_1_172646.trj", "2_06_02_1_214102.trj",
+    "3_01_03_2_181341.trj", "3_04_03_1_205313.trj", "3_06_08_2_174140.trj",
+    "4_02_02_1_180400.trj", "4_03_05_1_190717.trj", "4_05_01_1_213913.trj"))
+# Filter out outliers
+plot_sample <- resultstidy %>% 
+    filter(!(serveid %in% serve_outliers$serveid))
+# Data per serve
+plot_perserve <- plot_sample  %>% 
+    select(-(t:a), -(ax_p:az_p)) %>%
+    group_by(serveid, arc) %>%
+    mutate(Cd_ave = mean(Cd), Cl_ave = mean(Cl)) %>%
+    distinct(.keep_all = TRUE) %>%
+    gather(key, value, -(1:(match("arc", colnames(.))))) %>%
+    unite(key, c(key,arc), sep="_arc") %>%
+    spread(key, value) %>%
+    distinct(.keep_all = TRUE)
+#--- Select players with multiple games
+MultipleGames <- function(min, perserve=FALSE, server=FALSE) {
+    multiple_games <- atp_serves %>% 
+        select(server, matchid) %>% distinct() %>% 
+        count(server, sort=TRUE) %>% filter(n >= min)
+    if (perserve==FALSE) {
+    plot_sample %>%
+        filter(server %in% multiple_games$server)
+    }
+    else {
+      if (server==FALSE) {
+      plot_perserve %>%
+        filter(server %in% multiple_games$server)
+      }
+      else {
+        as.data.frame(multiple_games %>% select(server))
+      }
+    }
+}
+```
+
+# Shape
+## Position
+asdfaslkfj asfldkjasd f
+```{r all_topdown, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "All serves as overlayed lines"}
+plot_gg <- plot_sample
+# Top Down
+court_topdown + geom_path(aes(x=px,y=py, group=serveid, colour = server), data=plot_gg, alpha = 1) +  
+  theme(legend.key.size = unit(0.3, "cm")) 
+```
+
+```{r all_topdown_hexbin, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Frequency of serves in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample 
+court_topdown + 
+    stat_binhex(data = plot_gg, aes(x=px, y=py), bins = 20, 
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(5, "Blues"), 
+                         guide = "colourbar",
+                         name = "Frequeny")
+```
+
+```{r all_topdown_height, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average height of serves in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=pz), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(8, "PuRd"), 
+                         guide = "colourbar",
+                         name = "Ave. \nHeight") 
+```
+
+
+```{r all_topdown_speed, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average impact speed in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=speedkmph), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)")
+```
+
+```{r all_topdown_vel, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average true velocity in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=v), bins = 30, 
+                fun = function(z) mean(z),
+                colour = "white", alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(8, "Oranges"), 
+                         guide = "colourbar",
+                         name = "Average \nvelocity")
+```
+
+
+```{r all_topdown_side, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Scorer in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- filter(plot_sample, scorername != "No Winner")
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=scorername), bins = 30, 
+                fun = function(x) {
+                   tab <- table(x)
+                   names(tab)[which.max(tab)]},
+                colour = "white", alpha = 0.25) +
+    scale_fill_discrete(name = "Most \nOccurring")
+```
+
+```{r all_topdown_classname, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Serve type in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- filter(plot_sample, serve_classname != "Fault")
+court_topdown + 
+    stat_summary_hex(data = plot_gg, aes(x=px, y=py, z=serve_classname), bins = 30, 
+                fun = function(x) {
+                   tab <- table(x)
+                   names(tab)[which.max(tab)]},
+                colour = "white", alpha = 0.25) +
+    scale_fill_discrete(name = "Most \nOccurring")
+```
+
+```{r all_topdown_hextriclass, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Serve type using Hextri"}
+plot_gg <- filter(plot_sample, serve_classname != "Fault")
+hextri(x=plot_gg$px, y=plot_gg$py,
+       class=plot_gg$serve_classname, 
+       colours=c("blue","orange","green", "red"), nbins = 30, border=TRUE,style="size")
+    lines(x=court_trace$x, y=court_trace$y, lwd = 2)
+    legend(2,10,fill=c("blue","green","orange"),
+       legend=c("Ace", "Not Returned", "Returned"),bty="n")
+# I could also look at a bubblechart - size is the 3rd variable
+```
+
+## Landing
+```{r all_topdown_landsplitscorer, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Split landing position coloured by scorer"}
+#--- Break into before bounce and after bounce
+plot_arc1 <- plot_sample %>% 
+    filter(arc == 1) %>% group_by(serveid) %>%
+    top_n(4,t) %>% top_n(2,-t)
+plot_arc3 <- plot_sample %>% 
+    filter(arc == 3) %>% group_by(serveid) %>%
+    top_n(4,-t) %>% top_n(2,t)
+plot_gg <- plot_sample
+
+#--- Plot
+court_topdown + 
+    geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = scorername), alpha=0.5, shape=1) +
+    geom_path(data = filter(plot_arc1, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) +
+    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = scorername), alpha = 0.5) + 
+  guides(colour = guide_legend(override.aes = list(size = 10))) +
+  theme(legend.key=element_rect(fill=NA))
+```
+
+```{r all_topdown_landsplitnum, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Split landing position coloured by serve number"}
+#--- Break into before bounce and after bounce
+plot_arc1 <- plot_sample %>% 
+    filter(arc == 1) %>% group_by(serveid) %>%
+    top_n(4,t) %>% top_n(2,-t)
+plot_arc3 <- plot_sample %>% 
+    filter(arc == 3) %>% group_by(serveid) %>%
+    top_n(4,-t) %>% top_n(2,t)
+plot_gg <- plot_sample
+
+#--- Plot
+court_topdown + 
+    geom_point(data = filter(plot_gg, serve_classname != "Fault"), aes(x=center.x, y=center.y, colour = serve_num), alpha=0.5, shape=1) +
+    geom_path(data = filter(plot_arc1, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = serve_num), alpha = 0.5) +
+    geom_path(data = filter(plot_arc3, serve_classname != "Fault"), aes(x=px,y=py, group=serveid, colour = serve_num), alpha = 0.5) +
+   guides(colour = guide_legend(override.aes = list(size = 10))) +
+   theme(legend.key=element_rect(fill=NA))
+```
+
+```{r all_landingcontoursguass, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
+plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
+court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) #+ 
+  # facet_grid(side~serve_classname)
+```
+
+```{r landingcountours function, echo=TRUE, cache=TRUE}
+factor1 <- as.data.frame(levels(plot_perserve$serve_num))
+factor2 <- MultipleGames(4,perserve = TRUE, server = TRUE)
+factor3 <- c("Ad", "Deuce")
+# limits <- data.frame(Ad = c(-6.4, 0, 0, 4.115),
+                 # Deuce = c(-6.4, 0, -4.115, 0))
+
+contour_lim <- data.frame()
+for (i in 1:nrow(factor1)) {
+  for (j in 1:nrow(factor2)) {
+    for (s in 1:2) {
+      f1 = factor1[i,1]; f2 = factor2[j,1]; f3 = factor3[2]
+      out <- plot_perserve %>%
+        filter(serve_num %in% f1, server %in% f2, side %in% f3)
+      if (f3 == "Ad") {
+        out <- kde2d(out$center.x, out$center.y,
+                   lims = c(-6.4, 0, 0, 4.115))
+      }
+      if (f3 == "Deuce") {
+        out <- kde2d(out$center.x, out$center.y,
+                   lims = c(-6.4, 0, -4.115, 0))
+      }
+      out <- data.frame(expand.grid(center.x = out$x, center.y = out$y),
+                     z = as.vector(out$z)) %>%
+        mutate(serve_num = f1, server = f2, side = f3)
+      contour_lim <- rbind(contour_lim, out)
+    }
+  }
+}
+contour_numserver <- contour_lim
+
+plot_gg <- contour_numserver %>% filter(serve_num=="First Serve", server=="DJOKOVIC")
+court_service + 
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_gg) + 
+  facet_grid(serve_num~server)
+```
+
+
+```{r all_landingcontourslimits, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
+plot_Ad <- plot_perserve %>% filter(side == "Ad")
+densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
+              lims = c(-6.4, 0, 0, 4.115))
+plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
+                     z = as.vector(densAd$z))
+plot_Du <- plot_perserve %>% filter(side == "Deuce")
+densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
+              lims = c(-6.4, 0, -4.115, 0))
+plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
+                     z = as.vector(densDu$z))
+court_service + 
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du) #+ 
+  # facet_grid(side~serve_classname)
+```
+
+http://stackoverflow.com/questions/12394321/r-what-algorithm-does-geom-density-use-and-how-to-extract-points-equation-of
+
+```{r landing_contours4games, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "To Fixx"}
+plot_gg <- MultipleGames(4,perserve = TRUE)
+court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) +
+    facet_grid(serve_num~server)
+```
+
+
+
+# Spin
+
+```{r coolarc_behind, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Example of the effect of spin"}
+#--- Plot single serve
+serve_coolarc <- c("5_02_02_1_190119.trj","3_01_02_1_171036.trj")
+plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
+# From Behind
+court_behind + geom_path(aes(x=py,y=pz, group=serveid, colour = server), data=plot_gg, alpha = 1) + 
+    geom_path(data = net_trace, aes(x = y, y = z), color = 'blue', size = 1.0)
+```
+
+## Code formatting
+
+Don't use markdown, instead use the more precise latex commands:
+
+* \proglang{Java}
+* \pkg{plyr}
+* \code{print("abc")}
+
+# R code
+
+Can be inserted in regular R markdown blocks.
+
+```{r}
+x <- 1:10
+x
+```
