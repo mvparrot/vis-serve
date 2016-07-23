@@ -42,7 +42,7 @@ require(hexbin)
 require(RColorBrewer)
 require(aplpack)
 ```
-```{r, scripts, echo = FALSE, messages=FALSE, warning=FALSE}
+```{r scripts, echo = FALSE, messages=FALSE, warning=FALSE}
 #--- Load functions from helper scripts
 source("Helper Load Data.R")
 source("Helper Plotting Factors.R")
@@ -282,16 +282,18 @@ plot_Ad <- plot_perserve %>% filter(side == "Ad")
 densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
               lims = c(-6.4, 0, 0, 4.115))
 plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
-                     z = as.vector(densAd$z))
+                     z = as.vector(densAd$z)) %>%
+  mutate(side = "Ad")
 plot_Du <- plot_perserve %>% filter(side == "Deuce")
 densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
               lims = c(-6.4, 0, -4.115, 0))
 plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
-                     z = as.vector(densDu$z))
+                     z = as.vector(densDu$z)) %>%
+  mutate(side = "Deuce")
 court_service + 
   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
-  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du) #+ 
-  # facet_grid(side~serve_classname)
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du) + 
+  facet_wrap(~side)
 ```
 
 http://stackoverflow.com/questions/12394321/r-what-algorithm-does-geom-density-use-and-how-to-extract-points-equation-of
