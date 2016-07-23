@@ -31,6 +31,7 @@ This template demonstrates some of the basic latex you'll need to know to create
 ```{r packages, echo=FALSE, messages=FALSE, warning=FALSE, include=FALSE}
 #--- Packages Required
 require(MASS)
+require(cowplot)
 require(tidyr)
 require(dplyr)
 require(purrr)
@@ -232,19 +233,36 @@ court_topdown +
    theme(legend.key=element_rect(fill=NA))
 ```
 
-```{r all_landingcontoursguass, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
+```{r all_landingcontoursguass_vs_kde2d, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
+#--- Plotting uing geom_density2d from ggplot2
 plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
-court_service + 
-    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) #+ 
-  # facet_grid(side~serve_classname)
+plot1 <- court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y))
+#--- Plotting using Two Dimensional Kernel Density Estimation from MASS 
+#    (axis-aligned bivariate normal kernel on a square grid)
+plot_Ad <- plot_perserve %>% filter(side == "Ad")
+densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
+              lims = c(-6.4, 0, 0, 4.115))
+plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
+                     z = as.vector(densAd$z)) %>%
+  mutate(side = "Ad")
+plot_Du <- plot_perserve %>% filter(side == "Deuce")
+densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
+              lims = c(-6.4, 0, -4.115, 0))
+plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
+                     z = as.vector(densDu$z)) %>%
+  mutate(side = "Deuce")
+plot2 <- court_service + 
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du)
+#--- plot the results side by side
+plot_grid(plot1, plot2, align='h', labels=c('A', 'B'))
 ```
 
 ```{r landingcountours function, echo=TRUE, cache=TRUE}
 factor1 <- as.data.frame(levels(plot_perserve$serve_num))
 factor2 <- MultipleGames(4,perserve = TRUE, server = TRUE)
 factor3 <- c("Ad", "Deuce")
-# limits <- data.frame(Ad = c(-6.4, 0, 0, 4.115),
-                 # Deuce = c(-6.4, 0, -4.115, 0))
 
 contour_lim <- data.frame()
 for (i in 1:nrow(factor1)) {
