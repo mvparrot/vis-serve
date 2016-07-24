@@ -32,6 +32,7 @@ This template demonstrates some of the basic latex you'll need to know to create
 #--- Packages Required
 require(MASS)
 require(cowplot)
+require(lazyeval)
 require(tidyr)
 require(dplyr)
 require(purrr)
@@ -51,7 +52,9 @@ source("Helper Standardise Coefficients.R")
 source("Helper Plotting Values.R")
 source("Helper Spin Coefficients.R")
 source("Helper Basic Plots.R")
+source("Helper Contour Limits.R")
 ```
+
 ```{r generatedata, echo = FALSE, messages=FALSE, warning=FALSE, cache=TRUE}
 #--- Generate the data for plotting
 data <- PlottingFactors(atp_serves)
@@ -116,7 +119,7 @@ plot_gg <- plot_sample
 court_topdown + 
     stat_binhex(data = plot_gg, aes(x=px, y=py), bins = 20, 
                 colour = "white", alpha = 0.7) +
-    scale_fill_gradientn(colours = brewer.pal(5, "Blues"), 
+    scale_fill_gradientn(colours = brewer.pal(4, "Blues"), 
                          guide = "colourbar",
                          name = "Frequeny")
 ```
@@ -199,7 +202,7 @@ hextri(x=plot_gg$px, y=plot_gg$py,
 #--- Break into before bounce and after bounce
 plot_arc1 <- plot_sample %>% 
     filter(arc == 1) %>% group_by(serveid) %>%
-    top_n(4,t) %>% top_n(2,-t)
+    top_n(5,-t) %>% top_n(3,t)
 plot_arc3 <- plot_sample %>% 
     filter(arc == 3) %>% group_by(serveid) %>%
     top_n(4,-t) %>% top_n(2,t)
@@ -218,7 +221,7 @@ court_topdown +
 #--- Break into before bounce and after bounce
 plot_arc1 <- plot_sample %>% 
     filter(arc == 1) %>% group_by(serveid) %>%
-    top_n(4,t) %>% top_n(2,-t)
+    top_n(4,-t) %>% top_n(3,t)
 plot_arc3 <- plot_sample %>% 
     filter(arc == 3) %>% group_by(serveid) %>%
     top_n(4,-t) %>% top_n(2,t)

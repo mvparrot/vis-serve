@@ -19,14 +19,14 @@ for (i in 1:nrow(factor1)) {
       }
       out <- data.frame(expand.grid(center.x = out$x, center.y = out$y),
                         z = as.vector(out$z)) %>%
-        mutate(serve_num = f1, server = f2, side = f3)
+        mutate(serve_num=f1, server = f2, side = f3)
       contour_lim <- rbind(contour_lim, out)
     }
   }
 }
 contour_lim <- contour_lim %>% 
   distinct(.keep_all = TRUE) %>% # I get duplicates for some reason
-  mutate(unique = paste(serve_num, server, side,sep = "."))
+  mutate(unique = paste(arg1, server, side,sep = "."))
 
 plot_split <- split(contour_lim, contour_lim$unique)
 
