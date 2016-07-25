@@ -60,7 +60,7 @@ source("Helper Contour Limits.R")
 data <- PlottingFactors(atp_serves)
 coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
                                    start.x, start.y, start.z, center.x, center.y)
-values <- PlottingValues(coef.df,tstep = 0.08)
+values <- PlottingValues(coef.df,tstep = 0.04)
 resultstidy <-  SpinModel(values)
 ```
 
@@ -68,7 +68,8 @@ resultstidy <-  SpinModel(values)
 serve_outliers <- data.frame(serveid = c(
     "1_09_02_1_191947.trj", "2_04_01_1_172646.trj", "2_06_02_1_214102.trj",
     "3_01_03_2_181341.trj", "3_04_03_1_205313.trj", "3_06_08_2_174140.trj",
-    "4_02_02_1_180400.trj", "4_03_05_1_190717.trj", "4_05_01_1_213913.trj"))
+    "4_02_02_1_180400.trj", "4_03_05_1_190717.trj", "4_05_01_1_213913.trj",
+    "1_02_01_1_161204.trj"))
 # Filter out outliers
 plot_sample <- resultstidy %>% 
     filter(!(serveid %in% serve_outliers$serveid))
@@ -202,7 +203,7 @@ hextri(x=plot_gg$px, y=plot_gg$py,
 #--- Break into before bounce and after bounce
 plot_arc1 <- plot_sample %>% 
     filter(arc == 1) %>% group_by(serveid) %>%
-    top_n(5,-t) %>% top_n(3,t)
+    top_n(4,-t) %>% top_n(3,t)
 plot_arc3 <- plot_sample %>% 
     filter(arc == 3) %>% group_by(serveid) %>%
     top_n(4,-t) %>% top_n(2,t)
@@ -236,7 +237,7 @@ court_topdown +
    theme(legend.key=element_rect(fill=NA))
 ```
 
-```{r all_landingcontoursguass_vs_kde2d, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
+```{r all_landingcontoursgauss_vs_kde2d, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using Gauss density2D and KDE2d with limits"}
 #--- Plotting uing geom_density2d from ggplot2
 plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
 plot1 <- court_service + 
@@ -248,84 +249,212 @@ densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y,
               lims = c(-6.4, 0, 0, 4.115))
 plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
                      z = as.vector(densAd$z)) %>%
-  mutate(side = "Ad")
+              mutate(side = "Ad")
 plot_Du <- plot_perserve %>% filter(side == "Deuce")
 densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
               lims = c(-6.4, 0, -4.115, 0))
 plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
                      z = as.vector(densDu$z)) %>%
-  mutate(side = "Deuce")
+              mutate(side = "Deuce")
 plot2 <- court_service + 
   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du)
 #--- plot the results side by side
-plot_grid(plot1, plot2, align='h', labels=c('A', 'B'))
+plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
 ```
 
-```{r landingcountours function, echo=TRUE, cache=TRUE}
-factor1 <- as.data.frame(levels(plot_perserve$serve_num))
-factor2 <- MultipleGames(4,perserve = TRUE, server = TRUE)
-factor3 <- c("Ad", "Deuce")
-
-contour_lim <- data.frame()
-for (i in 1:nrow(factor1)) {
-  for (j in 1:nrow(factor2)) {
-    for (s in 1:2) {
-      f1 = factor1[i,1]; f2 = factor2[j,1]; f3 = factor3[2]
-      out <- plot_perserve %>%
-        filter(serve_num %in% f1, server %in% f2, side %in% f3)
-      if (f3 == "Ad") {
-        out <- kde2d(out$center.x, out$center.y,
-                   lims = c(-6.4, 0, 0, 4.115))
-      }
-      if (f3 == "Deuce") {
-        out <- kde2d(out$center.x, out$center.y,
-                   lims = c(-6.4, 0, -4.115, 0))
-      }
-      out <- data.frame(expand.grid(center.x = out$x, center.y = out$y),
-                     z = as.vector(out$z)) %>%
-        mutate(serve_num = f1, server = f2, side = f3)
-      contour_lim <- rbind(contour_lim, out)
-    }
-  }
-}
-contour_numserver <- contour_lim
-
-plot_gg <- contour_numserver %>% filter(serve_num=="First Serve", server=="DJOKOVIC")
-court_service + 
-  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_gg) + 
-  facet_grid(serve_num~server)
+```{r landingcountours function, echo=TRUE, cache=FALSE}
 ```
 
-
-```{r all_landingcontourslimits, echo=TRUE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Countour plot of all serves using "}
-plot_Ad <- plot_perserve %>% filter(side == "Ad")
-densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
-              lims = c(-6.4, 0, 0, 4.115))
-plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
-                     z = as.vector(densAd$z)) %>%
-  mutate(side = "Ad")
-plot_Du <- plot_perserve %>% filter(side == "Deuce")
-densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
-              lims = c(-6.4, 0, -4.115, 0))
-plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
-                     z = as.vector(densDu$z)) %>%
-  mutate(side = "Deuce")
-court_service + 
-  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
-  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du) + 
-  facet_wrap(~side)
-```
-
-http://stackoverflow.com/questions/12394321/r-what-algorithm-does-geom-density-use-and-how-to-extract-points-equation-of
-
-```{r landing_contours4games, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "To Fixx"}
-plot_gg <- MultipleGames(4,perserve = TRUE)
+```{r landing_contours4gamesguass, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positiions based on serve and serve number using guass density2d"}
+plot_gg <- MultipleGames(4,perserve = TRUE) %>% filter(serve_classname != "Fault")
 court_service + 
     geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) +
     facet_grid(serve_num~server)
 ```
 
+
+```{r landing_contours4gameskde, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = TRUE)
+```
+
+
+```{r landing_contours3gameskde, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+plotall <-  ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 3, plot = FALSE)
+plotall + facet_wrap(serve_num ~ server)
+```
+
+```{r landing_contoursinteresting, echo=FALSE, cache=TRUE}
+# atp_serves %>% ungroup %>% select(loser_name,loser_rank) %>% distinct() %>% arrange(loser_rank)
+# servers <- atp_serves %>% ungroup %>% select(server) %>% distinct()
+servers <- data.frame(servers = c("DJOKOVIC", "MURRAY", "FEDERER", "WAWRINKA"))
+plot1 <- ContourLimits(plot_perserve, "serve_num", servers, plot = TRUE)
+servers <- data.frame(servers = c("SELA", "MILLMAN", "HERBERT", "ROBERT"))
+plot2 <- ContourLimits(plot_perserve, "serve_num", servers, plot = TRUE)
+
+plot_grid(plot1, plot2, align='h', 
+          labels=c('Top 4 Players \n(Rank: 1, 3, 2, 4)', 
+                   'Bottom 4 Players \n(Rank: 167, 95, 225, 87)'))
+```
+
+## Speed
+Speed distribution
+hexplot with speed average 
+```{r speed_all, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of all non-fault serves categorised by the serve number and winner"}
+plot_gg <- plot_perserve %>% filter(scorername != "No Winner")
+ggplot(data = plot_gg, aes(speedkmph, fill=scorername, color = scorername)) + 
+    geom_density(alpha = 0.2) + facet_grid(serve_num ~ scorername) +
+    theme_light()
+```
+
+```{r speed_games4num, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, scorername != "No Winner")
+ggplot(data = plot_gg, aes(speedkmph, fill=scorername)) + 
+    geom_density(alpha = 0.2) + facet_wrap(~serve_num)
+```
+
+```{r speed_games4servnum, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, scorername != "No Winner")
+ggplot(data = plot_gg, aes(speedkmph)) + 
+   geom_density(alpha = 0.2) + 
+   # geom_density(data = select(plot_gg, -scorername), aes(speedkmph)) +
+   facet_grid(serve_num ~ server, labeller = label_value, scales = "free_y")
+```
+
+
+```{r speed_games4servnumsco, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, scorername != "No Winner")
+ggplot(data = plot_gg, aes(speedkmph, fill=scorername)) + 
+   geom_density(alpha = 0.2) + 
+   # geom_density(data = select(plot_gg, -scorername), aes(speedkmph)) +
+   facet_grid(serve_num ~ server, labeller = label_value, scales = "free_y")
+```
+
+```{r speed_games4servnumside, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server)
+ggplot(data = plot_gg, aes(speedkmph, fill=side)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ server, labeller = label_value, scales = "free_y")
+```
+
+```{r speed_landinghex_side100, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average impact speed in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample %>% filter(serve_classname != "Fault")
+court_service + 
+    stat_summary_2d(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 100, 
+                fun = function(z) mean(z),alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)") +
+  facet_wrap(~side)
+```
+
+
+```{r speed_landinghex_side10, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average impact speed in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample %>% filter(serve_classname != "Fault")
+court_service + 
+    stat_summary_2d(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 20, 
+                fun = function(z) mean(z),alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)") +
+  facet_wrap(~side)
+```
+
+```{r speed_landinghex_class, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average impact speed in hexagonal bins"}
+#--- Top down using hexbins
+plot_gg <- plot_sample
+court_service + 
+    stat_summary_hex(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 45, 
+                fun = function(z) mean(z),alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)") +
+  facet_wrap(~serve_classname)
+```
+
+```{r speed_games4_landinghex_num, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Average impact speed in hexagonal bins"}
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, serve_classname != "Fault")
+court_service + 
+    stat_summary_hex(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 30, 
+                fun = function(z) mean(z),alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(9, "YlOrBr"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)") +
+  facet_grid(serve_num ~ server)
+```
+
+```{r speed_games4_landinghex_contour_num, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+plotall <- ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = FALSE)
+plotall +
+    stat_summary_hex(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 30, 
+                fun = function(z) mean(z),alpha = 0.7) +
+    scale_fill_gradientn(colours = brewer.pal(5, "RdPu"), 
+                         guide = "colourbar",
+                         name = "Average \nimpact \nspeed \n(km/h)") +
+  facet_grid(serve_num ~ server)
+```
+
+```{r speed_games4_landingpoint_contour_num, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+plotall <- ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = FALSE)
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, serve_classname != "Fault")
+plotall +
+   geom_point(data = plot_gg, aes(x=center.x, y=center.y,colour=speedkmph, alpha=0.8)) +
+  facet_grid(serve_num ~ server)
+```
+
+
+```{r speed_allsidenumspeedz, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve
+ggplot(data = plot_gg, aes(start.z, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free_y")
+```
+
+
+```{r speed_allsidenumspeedx, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve
+ggplot(data = plot_gg, aes(start.x, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free_y")
+```
+
+
+```{r speed_allsidenumspeedy, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
+
+```{r speed_allsidenumspeedy_novak, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve %>% filter(server == "DJOKOVIC")
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
+
+```{r speed_allsidenumspeedy_kyrgios, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve %>% filter(server == "KYRGIOS")
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
+
+
+```{r speed_allsidenumspeedy_wawrinka, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve %>% filter(server == "WAWRINKA")
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
 
 
 # Spin

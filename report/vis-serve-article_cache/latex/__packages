@@ -11,3 +11,4 @@ RColorBrewer
 aplpack
 MASS
 cowplot
+lazyeval

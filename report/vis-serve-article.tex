@@ -170,68 +170,213 @@ asdfaslkfj asfldkjasd f
 
 \begin{CodeChunk}
 \begin{CodeInput}
+R> #--- Plotting uing geom_density2d from ggplot2
 R> plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
-R> court_service + 
-R+     geom_density2d(data = plot_gg, aes(x=center.x, y=center.y)) #+ 
-\end{CodeInput}
-\begin{figure}
-
-{\centering \includegraphics{vis-serve-article_files/figure-latex/all_landingcontoursguass-1} 
-
-}
-
-\caption[Countour plot of all serves using ]{Countour plot of all serves using }\label{fig:all_landingcontoursguass}
-\end{figure}
-\begin{CodeInput}
-R>   # facet_grid(side~serve_classname)
-\end{CodeInput}
-\end{CodeChunk}
-
-\textbackslash{}begin\{CodeChunk\} \textbackslash{}begin\{CodeInput\}
-R\textgreater{} factor1 \textless{}-
-as.data.frame(levels(plot\_perserve\$side)) R\textgreater{} factor2
-\textless{}- MultipleGames(4,perserve = TRUE, server = TRUE)
-\textbackslash{}end\{CodeInput\} \textbackslash{}end\{CodeChunk\}
-
-\begin{CodeChunk}
-\begin{CodeInput}
+R> plot1 <- court_service + 
+R+     geom_density2d(data = plot_gg, aes(x=center.x, y=center.y))
+R> #--- Plotting using Two Dimensional Kernel Density Estimation from MASS 
+R> #    (axis-aligned bivariate normal kernel on a square grid)
 R> plot_Ad <- plot_perserve %>% filter(side == "Ad")
 R> densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
 R+               lims = c(-6.4, 0, 0, 4.115))
 R> plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
-R+                      z = as.vector(densAd$z))
+R+                      z = as.vector(densAd$z)) %>%
+R+               mutate(side = "Ad")
 R> plot_Du <- plot_perserve %>% filter(side == "Deuce")
 R> densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
 R+               lims = c(-6.4, 0, -4.115, 0))
 R> plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
-R+                      z = as.vector(densDu$z))
-R> court_service + 
+R+                      z = as.vector(densDu$z)) %>%
+R+               mutate(side = "Deuce")
+R> plot2 <- court_service + 
 R+   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
-R+   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du) #+ 
+R+   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du)
+R> #--- plot the results side by side
+R> plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
 \end{CodeInput}
 \begin{figure}
 
-{\centering \includegraphics{vis-serve-article_files/figure-latex/all_landingcontourslimits-1} 
+{\centering \includegraphics{vis-serve-article_files/figure-latex/all_landingcontoursgauss_vs_kde2d-1} 
 
 }
 
-\caption[Countour plot of all serves using ]{Countour plot of all serves using }\label{fig:all_landingcontourslimits}
+\caption[Countour plot of all serves using Gauss density2D and KDE2d with limits]{Countour plot of all serves using Gauss density2D and KDE2d with limits}\label{fig:all_landingcontoursgauss_vs_kde2d}
 \end{figure}
-\begin{CodeInput}
-R>   # facet_grid(side~serve_classname)
-\end{CodeInput}
 \end{CodeChunk}
-
-\url{http://stackoverflow.com/questions/12394321/r-what-algorithm-does-geom-density-use-and-how-to-extract-points-equation-of}
 
 \begin{CodeChunk}
 \begin{figure}
 
-{\centering \includegraphics{vis-serve-article_files/figure-latex/landing_contours4games-1} 
+{\centering \includegraphics{vis-serve-article_files/figure-latex/landing_contours4gamesguass-1} 
 
 }
 
-\caption[To Fixx]{To Fixx}\label{fig:landing_contours4games}
+\caption[Landing positiions based on serve and serve number using guass density2d]{Landing positiions based on serve and serve number using guass density2d}\label{fig:landing_contours4gamesguass}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/landing_contours4gameskde-1} 
+
+}
+
+\caption[Landing positions based on serve and serve number using kde2d with limits]{Landing positions based on serve and serve number using kde2d with limits}\label{fig:landing_contours4gameskde}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/landing_contours3gameskde-1} 
+
+}
+
+\caption[Landing positions based on serve and serve number using kde2d with limits]{Landing positions based on serve and serve number using kde2d with limits}\label{fig:landing_contours3gameskde}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+
+
+\begin{center}\includegraphics{vis-serve-article_files/figure-latex/landing_contoursinteresting-1} \end{center}
+
+\end{CodeChunk}
+
+\subsection{Speed}\label{speed}
+
+Speed distribution hexplot with speed average
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_all-1} 
+
+}
+
+\caption[Speed of all non-fault serves categorised by the serve number and winner]{Speed of all non-fault serves categorised by the serve number and winner}\label{fig:speed_all}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4num-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_games4num}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4servnum-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_games4servnum}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4servnumsco-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_games4servnumsco}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4servnumside-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_games4servnumside}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_landinghex_side100-1} 
+
+}
+
+\caption[Average impact speed in hexagonal bins]{Average impact speed in hexagonal bins}\label{fig:speed_landinghex_side100}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_landinghex_side10-1} 
+
+}
+
+\caption[Average impact speed in hexagonal bins]{Average impact speed in hexagonal bins}\label{fig:speed_landinghex_side10}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_landinghex_class-1} 
+
+}
+
+\caption[Average impact speed in hexagonal bins]{Average impact speed in hexagonal bins}\label{fig:speed_landinghex_class}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4_landinghex_num-1} 
+
+}
+
+\caption[Average impact speed in hexagonal bins]{Average impact speed in hexagonal bins}\label{fig:speed_games4_landinghex_num}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4_landinghex_contour_num-1} 
+
+}
+
+\caption[Landing positions based on serve and serve number using kde2d with limits]{Landing positions based on serve and serve number using kde2d with limits}\label{fig:speed_games4_landinghex_contour_num}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_games4_landingpoint_contour_num-1} 
+
+}
+
+\caption[Landing positions based on serve and serve number using kde2d with limits]{Landing positions based on serve and serve number using kde2d with limits}\label{fig:speed_games4_landingpoint_contour_num}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeed-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeed}
 \end{figure}
 \end{CodeChunk}
 
