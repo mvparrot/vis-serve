@@ -53,6 +53,7 @@ source("Helper Plotting Values.R")
 source("Helper Spin Coefficients.R")
 source("Helper Basic Plots.R")
 source("Helper Contour Limits.R")
+source("Helper Heat Map.R")
 ```
 
 ```{r generatedata, echo = FALSE, messages=FALSE, warning=FALSE, cache=TRUE}
@@ -103,6 +104,12 @@ MultipleGames <- function(min, perserve=FALSE, server=FALSE) {
     }
 }
 ```
+
+```{r test}
+head(values$t, n = 20)
+head(plot_sample$t,n = 20)
+```
+
 
 # Shape
 ## Position
@@ -263,7 +270,7 @@ plot2 <- court_service +
 plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
 ```
 
-```{r landingcountours function, echo=TRUE, cache=FALSE}
+```{r landingcountours function, echo=TRUE, cache=TRUE}
 ```
 
 ```{r landing_contours4gamesguass, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positiions based on serve and serve number using guass density2d"}
@@ -274,17 +281,17 @@ court_service +
 ```
 
 
-```{r landing_contours4gameskde, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+```{r landing_contours4gameskde, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
 ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = TRUE)
 ```
 
 
-```{r landing_contours3gameskde, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+```{r landing_contours3gameskde, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
 plotall <-  ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 3, plot = FALSE)
 plotall + facet_wrap(serve_num ~ server)
 ```
 
-```{r landing_contoursinteresting, echo=FALSE, cache=TRUE}
+```{r landing_contoursinteresting, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 9, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
 # atp_serves %>% ungroup %>% select(loser_name,loser_rank) %>% distinct() %>% arrange(loser_rank)
 # servers <- atp_serves %>% ungroup %>% select(server) %>% distinct()
 servers <- data.frame(servers = c("DJOKOVIC", "MURRAY", "FEDERER", "WAWRINKA"))
@@ -293,8 +300,9 @@ servers <- data.frame(servers = c("SELA", "MILLMAN", "HERBERT", "ROBERT"))
 plot2 <- ContourLimits(plot_perserve, "serve_num", servers, plot = TRUE)
 
 plot_grid(plot1, plot2, align='h', 
-          labels=c('Top 4 Players \n(Rank: 1, 3, 2, 4)', 
-                   'Bottom 4 Players \n(Rank: 167, 95, 225, 87)'))
+          labels=c('Top', 'Bottom'))
+          # labels=c('Top 4 Players \n(Rank: 1, 3, 2, 4)', 
+          #          'Bottom 4 Players \n(Rank: 167, 95, 225, 87)'))
 ```
 
 ## Speed
@@ -390,7 +398,7 @@ court_service +
   facet_grid(serve_num ~ server)
 ```
 
-```{r speed_games4_landinghex_contour_num, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+```{r speed_games4_landinghex_contour_num, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
 plotall <- ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = FALSE)
 plotall +
     stat_summary_hex(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph), bins = 30, 
@@ -401,7 +409,7 @@ plotall +
   facet_grid(serve_num ~ server)
 ```
 
-```{r speed_games4_landingpoint_contour_num, echo=FALSE, cache=FALSE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
+```{r speed_games4_landingpoint_contour_num, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 288, fig.align= "center", fig.cap = "Landing positions based on serve and serve number using kde2d with limits"}
 plotall <- ContourLimits(plot_perserve, argument1 = "serve_num", min_games = 4, plot = FALSE)
 plot_multiple_games <- MultipleGames(4)
 plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server, serve_classname != "Fault")
@@ -448,7 +456,6 @@ ggplot(data = plot_gg, aes(start.y, fill=speed_class)) +
    facet_grid(serve_num ~ side, scales = "free")
 ```
 
-
 ```{r speed_allsidenumspeedy_wawrinka, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
 plot_gg <- plot_perserve %>% filter(server == "WAWRINKA")
 ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
@@ -456,6 +463,26 @@ ggplot(data = plot_gg, aes(start.y, fill=speed_class)) +
    facet_grid(serve_num ~ side, scales = "free")
 ```
 
+```{r bubble_allnumsidespeed, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 7, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve
+HeatMap(plot_gg, argument1 = "serve_num",
+        argument2 = "side", argument3 = "speedkmph",
+        bins=10, plot=TRUE, progress=FALSE)
+```
+
+```{r bubble_allnumclassspeed, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 8, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+plot_gg <- plot_perserve
+HeatMap(plot_gg, argument1 = "serve_num",
+         argument2 = "serve_classname", argument3 = "speedkmph",
+         bins=10, plot=TRUE, progress=FALSE)
+```
+
+
+```{r bubble_top4numspeed, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 8, dpi = 144, fig.align= "center", fig.cap = "Speed of top 4 players' non-fault serves categorised by the serve number"}
+HeatMap(plot_perserve, argument1 = "serve_num", min_games = 4,
+                 argument3 = "speedkmph",
+                 bins=5, plot = TRUE, progress = FALSE)
+```
 
 # Spin
 
@@ -467,6 +494,36 @@ plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
 court_behind + geom_path(aes(x=py,y=pz, group=serveid, colour = server), data=plot_gg, alpha = 1) + 
     geom_path(data = net_trace, aes(x = y, y = z), color = 'blue', size = 1.0)
 ```
+
+```{r spin_allrpm1vrpm3, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Example of the effect of spin"}
+plot_gg <- plot_perserve %>% filter(w_rpm_arc1 < 5500, w_rpm_arc3 < 7500)
+ggplot(plot_gg, aes(x=w_rpm_arc1, y=w_rpm_arc3, colour=speedkmph)) + geom_point()
+```
+
+
+```{r spin_allrpmside, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 5, dpi = 144, fig.align= "center", fig.cap = "Example of the effect of spin"}
+plot_gg <- plot_perserve %>% filter(w_rpm_arc1 < 5500)
+ggplot(plot_gg, aes(w_rpm_arc1, colour=serve_num)) + 
+  geom_density() + 
+  facet_wrap(~side)
+```
+
+```{r spin_top4rpmspeedside, echo=FALSE, cache=TRUE, fig.width = 9, fig.height = 11, dpi = 144, fig.align= "center", fig.cap = "Example of the effect of spin"}
+
+plot_multiple_games <- MultipleGames(4)
+plot_gg <- plot_perserve %>% filter(server %in% plot_multiple_games$server,
+                                    w_rpm_arc1 < 5500)
+plot1 <- ggplot(plot_gg, aes(w_rpm_arc1, colour=serve_num)) + 
+  geom_density() + 
+  facet_grid(side ~ server, scales = "free_y")
+plot2 <-ggplot(plot_gg, aes(speedkmph, colour=serve_num)) + 
+  geom_density() + 
+  facet_grid(side ~ server, scales = "free_y")
+
+plot_grid(plot1, plot2, align='h', ncol=1,
+          labels=c('Spin', 'Speed'))
+```
+
 
 ## Code formatting
 

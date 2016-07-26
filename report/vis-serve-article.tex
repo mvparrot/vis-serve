@@ -50,6 +50,25 @@ three servers was used.
 This template demonstrates some of the basic latex you'll need to know
 to create a JSS article.
 
+\begin{CodeChunk}
+\begin{CodeInput}
+R> head(values$t, n = 20)
+\end{CodeInput}
+\begin{CodeOutput}
+ [1] 0.0000000 0.0400000 0.0800000 0.1200000 0.1600000 0.2000000 0.2400000
+ [8] 0.2800000 0.3200000 0.3600000 0.4000000 0.4289524 0.4327567 0.4727567
+[15] 0.5127567 0.5527567 0.5927567 0.6327567 0.6727567 0.7127567
+\end{CodeOutput}
+\begin{CodeInput}
+R> head(plot_sample$t,n = 20)
+\end{CodeInput}
+\begin{CodeOutput}
+ [1] 0.0000000 0.0800000 0.1600000 0.2400000 0.3200000 0.4000000 0.4289524
+ [8] 0.4327567 0.5127567 0.5927567 0.6727567 0.7527567 0.8327567 0.8414598
+[15] 0.0000000 0.0800000 0.1600000 0.2400000 0.3200000 0.4000000
+\end{CodeOutput}
+\end{CodeChunk}
+
 \section{Shape}\label{shape}
 
 \subsection{Position}\label{position}
@@ -238,10 +257,14 @@ R> plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
 \end{CodeChunk}
 
 \begin{CodeChunk}
+\begin{figure}
 
+{\centering \includegraphics{vis-serve-article_files/figure-latex/landing_contoursinteresting-1} 
 
-\begin{center}\includegraphics{vis-serve-article_files/figure-latex/landing_contoursinteresting-1} \end{center}
+}
 
+\caption[Landing positions based on serve and serve number using kde2d with limits]{Landing positions based on serve and serve number using kde2d with limits}\label{fig:landing_contoursinteresting}
+\end{figure}
 \end{CodeChunk}
 
 \subsection{Speed}\label{speed}
@@ -372,11 +395,99 @@ Speed distribution hexplot with speed average
 \begin{CodeChunk}
 \begin{figure}
 
-{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeed-1} 
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedz-1} 
 
 }
 
-\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeed}
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedz}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedx-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedx}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedy-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedy}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedy_novak-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedy_novak}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedy_kyrgios-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedy_kyrgios}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/speed_allsidenumspeedy_wawrinka-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:speed_allsidenumspeedy_wawrinka}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/bubble_allnumsidespeed-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:bubble_allnumsidespeed}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/bubble_allnumclassspeed-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:bubble_allnumclassspeed}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/bubble_top4numspeed-1} 
+
+}
+
+\caption[Speed of top 4 players' non-fault serves categorised by the serve number]{Speed of top 4 players' non-fault serves categorised by the serve number}\label{fig:bubble_top4numspeed}
 \end{figure}
 \end{CodeChunk}
 
@@ -390,6 +501,39 @@ Speed distribution hexplot with speed average
 }
 
 \caption[Example of the effect of spin]{Example of the effect of spin}\label{fig:coolarc_behind}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/spin_allrpm1vrpm3-1} 
+
+}
+
+\caption[Example of the effect of spin]{Example of the effect of spin}\label{fig:spin_allrpm1vrpm3}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/spin_allrpmside-1} 
+
+}
+
+\caption[Example of the effect of spin]{Example of the effect of spin}\label{fig:spin_allrpmside}
+\end{figure}
+\end{CodeChunk}
+
+\begin{CodeChunk}
+\begin{figure}
+
+{\centering \includegraphics{vis-serve-article_files/figure-latex/spin_top4rpmspeedside-1} 
+
+}
+
+\caption[Example of the effect of spin]{Example of the effect of spin}\label{fig:spin_top4rpmspeedside}
 \end{figure}
 \end{CodeChunk}
 

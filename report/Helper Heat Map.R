@@ -2,17 +2,25 @@
 #--- Contour Limits
 #--- Alwin Wang
 #================================================
-HeatMap <- function(plot_perserve, argument1, min_games, plot=TRUE, progress=FALSE) {
+HeatMap <- function(plot_perserve, argument1="serve_num", 
+                    argument2="server", min_games="4", 
+                    argument3="speedkmph",
+                    bins=15, plot=TRUE, progress=FALSE) {
   #--- Initial factors for the for loops
   # Get a list of the factor 'levels' of argument1
   factor1 <- as.data.frame(plot_perserve %>% ungroup %>%
                              select_(interp(argument1)) %>% distinct())
   # List of interested servers
-  if (is.numeric(min_games)) {
-    # Get the top n players we're interested in
-    factor2 <- MultipleGames(min_games, perserve = TRUE, server = TRUE)
+  if (argument2=="server") {
+    if (is.numeric(min_games)) {
+      # Get the top n players we're interested in
+      factor2 <- MultipleGames(min_games, perserve = TRUE, server = TRUE)
+    } else {
+      factor2 <- min_games
+    }
   } else {
-    factor2 <- min_games
+    factor2 <- as.data.frame(plot_perserve %>% ungroup %>%
+                               select_(interp(argument2)) %>% distinct())
   }
   # Sides for limits
   factor3 <- c("Ad", "Deuce")
@@ -42,33 +50,44 @@ HeatMap <- function(plot_perserve, argument1, min_games, plot=TRUE, progress=FAL
           filter_(interp(quote(x %in% y),
                          x = as.name(argument1),
                          y = f1)) %>%
-          filter(server %in% f2, side %in% f3)
-        # Impose limits if its on the Ad side
-        if (f3 == "Ad") {
-          # I can impose lims = c(-6.4, 0, 0, 4.115)) later
+          filter_(interp(quote(x %in% y),
+                         x = as.name(argument2),
+                         y = f2)) %>%
+          filter(side %in% f3)
+        
+        # Skip if out has zero length (i.e error)
+        if (nrow(out) == 0) {
+          b = b + 1
+          if (progress == TRUE) {
+            setTxtProgressBar(pb,b)
+          }
+          next
         }
-        # Impose limits if it's on the Deuce side
-        if (f3 == "Deuce") {
-          # I can impose lims = c(-6.4, 0,-4.115, 0)) later
-        }
-        # Expand it so it can be plotted later
-        AND THIS IS WHERE I END
+          
+        out[["z"]] = out[[argument3]]
+        stat1 <- ggplot_build(ggplot() +
+          stat_summary_2d(data = out, aes(x=center.x, y=center.y, z=z),
+                          bins = bins,
+                          fun = function(z) mean(z)))
+        stat1 <- as.data.frame(stat1[[1]]) %>% 
+          select(xbin, ybin, x, y, value)
+        # Count and density per bin
+        stat2 <- ggplot_build(ggplot() +
+          stat_bin_2d(data = out, aes(x=center.x, y=center.y),
+                      bins = bins))
+        stat2 <- as.data.frame(stat2[[1]]) %>% 
+          select(xbin, ybin, x, y, count, density)
+        # Join them together
         out <-
-          data.frame(expand.grid(center.x = out$x, center.y = out$y),
-                     density = as.vector(out$z)) %>%
-          # Round the v small values so they aren't plotted
-          filter(density >= 0.025)
+          left_join(stat1, stat2, by=c("xbin", "ybin", "x", "y"))
         # Add plotting factors
         out[[argument1]] = f1
-        out[["server"]] = f2
+        out[[argument2]] = f2
         out[["side"]] = f3
         
         # Add the iteration result to the output plot
         plotall <- plotall +
-          # geom_point(aes(x = center.x, y = center.y, alpha = density*4), data=out)
-          geom_point(aes(x = center.x, y = center.y, 
-                         size = density, colour = density),
-                    data=out)
+          geom_point(data=out, aes(x=x, y=y, size=count, colour=value))
         #--- Update the Progress Bar
         b = b + 1
         if (progress == TRUE) {
@@ -84,7 +103,10 @@ HeatMap <- function(plot_perserve, argument1, min_games, plot=TRUE, progress=FAL
   
   #--- Plot the output
   if (plot==TRUE) {
-    plotall + facet_grid(interp("argument1~server", argument1 = as.name(argument1)))
+    plotall + facet_grid(interp("argument1~argument2", 
+                                argument1 = as.name(argument1),
+                                argument2 = as.name(argument2))) +
+      scale_size_continuous(range = c(1,4.5), breaks = seq(1,4.5,by=0.5))
   }
   else {
     return(plotall)
@@ -92,24 +114,23 @@ HeatMap <- function(plot_perserve, argument1, min_games, plot=TRUE, progress=FAL
 }
 
 #--- Tests
-HeatMap(plot_perserve, argument1 = "serve_num", min_games = 4, plot = TRUE)  +
-    scale_size_continuous(range = c(0,2), breaks=seq(0,0.2,by=0.02))
-  #  scale_size_area(max_size = 1.5)
-# ContourLimits(filter(plot_perserve, serve_classname != "Fault"), 
-#               argument1 = "serve_classname", min_games = 4, plot = TRUE)
+# test1 <- HeatMap(plot_perserve, argument1 = "serve_num", argument2 = "serve_classname",
+#                  bins=10, plot = FALSE, progress = TRUE)
+# test1 + scale_size_continuous(range = c(0.5,4))
 # 
-stat1 <- ggplot() +
-        stat_summary_2d(data = plot_gg, aes(x=center.x, y=center.y, z=speedkmph),
-                        bins = 25,
-                        fun = function(z) mean(z),alpha = 0.7)
-stat1 <- ggplot_build(stat1)
-asdf1 <- as.data.frame(stat1[[1]]) # %>% select(x, y, value)
-names(asdf1)
-
-
-stat2 <- ggplot() +
-  stat_bin_2d(data = plot_gg, aes(x=center.x, y=center.y),
-                  bins = 25, alpha = 0.7)
-stat2 <- ggplot_build(stat2)
-asdf2 <- as.data.frame(stat2[[1]]) # %>% select(x, y, value)
-names(asdf2)
+# test2 <- HeatMap(plot_perserve, argument1 = "serve_num", min_games = 4,
+#                  bins=5, plot = TRUE, progress = TRUE)
+# test2 + scale_size_continuous(range = c(0.5,4))
+# 
+# HeatMap(plot_perserve, argument1 = "serve_num",
+#          argument2 = "serve_classname", argument3 = "speedkmph",
+#          bins=10, plot=TRUE, progress=TRUE)
+# 
+# HeatMap(plot_perserve, argument1 = "serve_num", 
+#         argument2 = "serve_classname", argument3 = "start.z",
+#         bins=10, plot=TRUE, progress=TRUE)
+# plot_gg <- plot_perserve %>% 
+#   filter(serve_classname != "Fault", serve_num == "First Serve")
+# HeatMap(plot_gg, argument1 = "serve_num", 
+#         argument2 = "side", argument3 = "speedkmph",
+#         bins=10, plot=TRUE, progress=TRUE)
