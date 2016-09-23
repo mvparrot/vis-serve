@@ -52,7 +52,7 @@ to create a JSS article.
 
 \begin{CodeChunk}
 \begin{CodeInput}
-R> head(values$t, n = 20)
+head(values$t, n = 20)
 \end{CodeInput}
 \begin{CodeOutput}
  [1] 0.0000000 0.0400000 0.0800000 0.1200000 0.1600000 0.2000000 0.2400000
@@ -60,12 +60,12 @@ R> head(values$t, n = 20)
 [15] 0.5127567 0.5527567 0.5927567 0.6327567 0.6727567 0.7127567
 \end{CodeOutput}
 \begin{CodeInput}
-R> head(plot_sample$t,n = 20)
+head(plot_sample$t,n = 20)
 \end{CodeInput}
 \begin{CodeOutput}
- [1] 0.0000000 0.0800000 0.1600000 0.2400000 0.3200000 0.4000000 0.4289524
- [8] 0.4327567 0.5127567 0.5927567 0.6727567 0.7527567 0.8327567 0.8414598
-[15] 0.0000000 0.0800000 0.1600000 0.2400000 0.3200000 0.4000000
+ [1] 0.0000000 0.0400000 0.0800000 0.1200000 0.1600000 0.2000000 0.2400000
+ [8] 0.2800000 0.3200000 0.3600000 0.4000000 0.4289524 0.4327567 0.4727567
+[15] 0.5127567 0.5527567 0.5927567 0.6327567 0.6727567 0.7127567
 \end{CodeOutput}
 \end{CodeChunk}
 
@@ -189,29 +189,29 @@ asdfaslkfj asfldkjasd f
 
 \begin{CodeChunk}
 \begin{CodeInput}
-R> #--- Plotting uing geom_density2d from ggplot2
-R> plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
-R> plot1 <- court_service + 
-R+     geom_density2d(data = plot_gg, aes(x=center.x, y=center.y))
-R> #--- Plotting using Two Dimensional Kernel Density Estimation from MASS 
-R> #    (axis-aligned bivariate normal kernel on a square grid)
-R> plot_Ad <- plot_perserve %>% filter(side == "Ad")
-R> densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
-R+               lims = c(-6.4, 0, 0, 4.115))
-R> plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
-R+                      z = as.vector(densAd$z)) %>%
-R+               mutate(side = "Ad")
-R> plot_Du <- plot_perserve %>% filter(side == "Deuce")
-R> densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
-R+               lims = c(-6.4, 0, -4.115, 0))
-R> plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
-R+                      z = as.vector(densDu$z)) %>%
-R+               mutate(side = "Deuce")
-R> plot2 <- court_service + 
-R+   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
-R+   geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du)
-R> #--- plot the results side by side
-R> plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
+#--- Plotting uing geom_density2d from ggplot2
+plot_gg <- plot_perserve %>% filter(serve_classname != "Fault")
+plot1 <- court_service + 
+    geom_density2d(data = plot_gg, aes(x=center.x, y=center.y))
+#--- Plotting using Two Dimensional Kernel Density Estimation from MASS 
+#    (axis-aligned bivariate normal kernel on a square grid)
+plot_Ad <- plot_perserve %>% filter(side == "Ad")
+densAd <- kde2d(plot_Ad$center.x, plot_Ad$center.y, 
+              lims = c(-6.4, 0, 0, 4.115))
+plot_Ad <- data.frame(expand.grid(center.x = densAd$x, center.y = densAd$y),
+                     z = as.vector(densAd$z)) %>%
+              mutate(side = "Ad")
+plot_Du <- plot_perserve %>% filter(side == "Deuce")
+densDu <- kde2d(plot_Du$center.x, plot_Du$center.y, 
+              lims = c(-6.4, 0, -4.115, 0))
+plot_Du <- data.frame(expand.grid(center.x = densDu$x, center.y = densDu$y),
+                     z = as.vector(densDu$z)) %>%
+              mutate(side = "Deuce")
+plot2 <- court_service + 
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Ad) +
+  geom_contour(aes(x=center.x, y=center.y,z=z), data = plot_Du)
+#--- plot the results side by side
+plot_grid(plot1, plot2, align='h', labels=c('Gauss', 'KDE2D'))
 \end{CodeInput}
 \begin{figure}
 
@@ -557,8 +557,8 @@ Can be inserted in regular R markdown blocks.
 
 \begin{CodeChunk}
 \begin{CodeInput}
-R> x <- 1:10
-R> x
+x <- 1:10
+x
 \end{CodeInput}
 \begin{CodeOutput}
  [1]  1  2  3  4  5  6  7  8  9 10
