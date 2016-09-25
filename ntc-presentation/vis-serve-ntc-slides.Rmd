@@ -363,6 +363,11 @@ ggplot(plot_gg) +
                          name = "Distance \nfrom \ncenterline")
 ```
 
+
+# Thank you
+
+# Appendix
+
 ##
 
 ```{r, spin_axis_end_point}
