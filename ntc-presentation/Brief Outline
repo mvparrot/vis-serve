@@ -1,0 +1,53 @@
+# Introduction
+## Goal
+  - create realistic summaries of serves that
+    > can be interpreted by TV viewers
+    > can be used for statistical analysis
+  - display characteristic of serves such as
+    > position (x, y, z)
+    > duration (t)
+    > speed (initial v, change in v due to surface)
+    > curvature (side spin, top spin, wind effects)
+    > strategy (single serve, serve clusters)
+## Current Methods
+  - landing position of all the serves
+  - top-down paths of all the serves
+    > Not really informative yeh?
+## Visualising Higher Dimensional Data 
+  - good and bad methods
+    > chernoff faces is bad
+    > parallel coordinates can be bad too
+  - for 2D images e.g. top down
+    > at most 4 variables 
+      e.g. x, y, v, clustering
+      e.g. x, y, frequency, spin
+  - for 3D images 
+    > could add more but is much harder to interpret
+# Shape
+  ## Entire serve plot
+  - no point in plotting the entire serve
+  - classify the data into bins and colour by a variable
+    > e.g. height, but not very useful
+    > e.g. speed, but nothing obvious
+    > e.g. serve type (hextri), more information but harder to interpret
+      * gaps between hexigons, etc
+  - remove part of the lines and show landing position instead
+    > e.g. split landing position coloured by serve number
+    > e.g. contour no limits
+    > e.g. contour with service box limits
+# Speed
+  ## Grouped by type
+    > e.g. density coloured by scorer name and factored by server and serve number
+  ## Grouped by cluster locations
+    > e.g. hexagonal bins with the average speed
+    > e.g. overlay aces on contour plot
+# Spin
+  ## Magnus effect
+    > model
+    > predictions vs actual
+  ## Change in direction before/after bounce
+    > plot a distribution
+  ## Methods for visualising spin
+    > circle around a ball
+    > axis vectors in 3D
+# Interesting examples

@@ -1,0 +1,14 @@
+base
+tidyr
+dplyr
+purrr
+broom
+ggplot2
+plotly
+hextri
+hexbin
+aplpack
+MASS
+cowplot
+lazyeval
+RColorBrewer

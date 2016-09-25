@@ -18,7 +18,7 @@ SpinVisual <- function(w0,wx,theta) {
 
 court_ball <- data.frame(t = seq(0,2*pi,length.out=51)) %>%
   mutate(x = r*100*cos(t), y = r*100*sin(t)) %>%
-  select(-t)
+  select(-t) 
 
 
 
