@@ -300,6 +300,15 @@ plot_grid(plot1, plot2, align='h',
 
 # Spin
 
+## Importance of Spin
+```{r spin_importance, fig.cap="Importance of spin"}
+serve_coolarc <- c("5_02_02_1_190119.trj","3_01_02_1_171036.trj")
+plot_gg <- plot_sample %>% filter(serveid %in% serve_coolarc)
+court_behind + geom_path(aes(x=py,y=pz, group=serveid, colour = server), data=plot_gg, alpha = 1) + 
+    geom_path(data = net_trace, aes(x = y, y = z), color = 'blue', size = 1.0)
+```
+
+
 ## Spin Model |Just a simple matter of...
 ```{r RMS_vec_image, out.width = "900px"}
 knitr::include_graphics("RMS_Vector.png")
@@ -344,7 +353,7 @@ plot_grid(plot1, plot2, align='h', ncol=2,
 ```
 
 ## Federer and Raonic {.flexbox .vcenter .smaller}
-```{r spin_spin_v_speed}
+```{r spin_fe_rao}
 plot_gg <- filter(plot_perserve, w_rpm_arc1<4000, server %in% c("FEDERER", "RAONIC"))
 ggplot(plot_gg) + 
   geom_point(aes(x = w_rpm_arc1, y = speedkmph, colour = (center.y)), alpha = 1) +
@@ -354,7 +363,9 @@ ggplot(plot_gg) +
                          name = "Distance \nfrom \ncenterline")
 ```
 
-```{r}
+##
+
+```{r, spin_axis_end_point}
 plot_gg <- filter(plot_perserve, w_rpm_arc1<4500, scorername != "No Winner")
 ggplot(plot_gg) + 
   geom_point(aes(x = wx_arc1, y = wy_arc1, colour = wz_arc1, size = w_rpm_arc1, shape = scorername)) + 
