@@ -23,6 +23,7 @@ knitr::opts_chunk$set(
 
 ```{r packages, cache = FALSE, include = FALSE}
 #--- Packages Required
+library(knitr)
 library(MASS)
 library(cowplot)
 library(lazyeval)
@@ -55,7 +56,7 @@ source("Helper Heat Map.R")
 data <- PlottingFactors(atp_serves)
 coef.df <- StandardiseCoefficients(data,matchid,server,speedkmph,speed_class,serve_num,serve_classname,side,scorername,
                                    start.x, start.y, start.z, center.x, center.y,
-                                   height_off_bounce, angle.change)
+                                   height_off_bounce, angle.change, importance)
 values <- PlottingValues(coef.df,tstep = 0.04)
 resultstidy <-  SpinModel(values)
 ```
@@ -297,6 +298,42 @@ plot_grid(plot1, plot2, align='h',
 
 # Speed
 
+## Speed and Landing Position
+```{r speed_all_land, fig.cap = "Landing positions of all serves coloured by speed"}
+plot_gg <- as.data.frame(plot_perserve)
+court_service + 
+  geom_point(aes(x=center.x, y=center.y, group=serveid, colour=speedkmph), data=plot_gg, alpha = 0.5) +  
+  theme(legend.key.size = unit(0.3, "cm"))
+```
+
+## Speed and Importance
+```{r speed_importance}
+plot_gg <- filter(plot_perserve, server %in% c("FEDERER", "RAONIC") )
+court_service +
+  geom_point(aes(x = center.x, y = center.y, colour = importance),
+             data = plot_gg) + 
+  scale_colour_gradientn(colours = brewer.pal(7, "Oranges"), 
+                         guide = "colourbar",
+                         name = "Importance") +
+  facet_grid(~server)
+```
+
+## Novak
+```{r speed_allsidenumspeedy_novak}
+plot_gg <- plot_perserve %>% filter(server == "DJOKOVIC")
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
+
+## Kyrgios
+```{r speed_allsidenumspeedy_kyrgios}
+plot_gg <- plot_perserve %>% filter(server == "KYRGIOS")
+ggplot(data = plot_gg, aes(start.y, fill=speed_class)) + 
+   geom_density(alpha = 0.2) + 
+   facet_grid(serve_num ~ side, scales = "free")
+```
+
 
 # Spin
 
@@ -319,7 +356,7 @@ $$\text{Prediction:}\qquad\vec{a}_{\text{p}}=\frac{\vec{F}_{\text{net}}}{m}=\fra
 \text{Lift Force:}\qquad\vec{L}=\left|L\right|\cdot\frac{\vec{W}\times\vec{V}}{\left|\vec{W}\times\vec{V}\right|}\qquad\left|L\right|=A\frac{\rho}{2}V^{2}\left(\frac{1}{2+\frac{V}{V_{s}}}\right) \\
 \text{Drag Force:}\qquad\vec{D}=-\left|D\right|\cdot\frac{\vec{V}}{\left|V\right|}\quad\left|D\right|=A\frac{\rho}{2}V^{2}\left(0.55+\frac{1}{\left(22.5+4.5\left(\frac{V}{V_{S}}\right)^{2.5}\right)^{0.4}}\right)$$
 
-## Spin Model Overview {.flexbox .vcenter .smaller}
+## Spin Model Overview {.flexbox .vcenter}
 $$\vec{W}=w_{x}\vec{i}+w_{y}\vec{j}+\sqrt{w^{2}-w_{x}^{2}-w_{y}^{2}}\,\vec{k} \\
 \text{from} \\ 
 \vec{a}=a_{x}\vec{i}+a_{y}\vec{j}+a_{z}\vec{k} \quad \text{and} \quad \vec{v}=a_{x}\vec{i}+v_{y}\vec{j}+v_{z}\vec{k}$$
@@ -363,6 +400,11 @@ ggplot(plot_gg) +
                          name = "Distance \nfrom \ncenterline")
 ```
 
+# Putting it all together
+## Master visualisation (no 3D)
+ - contour on court
+ - lines leading away
+ - lines coloured by spin
 
 # Thank you
 
