@@ -400,23 +400,6 @@ ggplot(plot_gg) +
                          name = "Distance \nfrom \ncenterline")
 ```
 
-# Putting it all together
-## Master visualisation (no 3D)
- - contour on court
- - lines leading away
- - lines coloured by spin
-
 # Thank you
-
-# Appendix
-
-##
-
-```{r, spin_axis_end_point}
-plot_gg <- filter(plot_perserve, w_rpm_arc1<4500, scorername != "No Winner")
-ggplot(plot_gg) + 
-  geom_point(aes(x = wx_arc1, y = wy_arc1, colour = wz_arc1, size = w_rpm_arc1, shape = scorername)) + 
-  facet_grid(serve_num ~ side)
-```
 
 
